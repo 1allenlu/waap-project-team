@@ -1,2 +1,2 @@
-PKG = server
+PKG = cities
 include ../common.mk
