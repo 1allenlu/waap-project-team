@@ -11,11 +11,13 @@ ID = 'id'
 NAME = 'name'
 STATE_CODE = 'state_code'
 
+#this is sample_city
 SAMPLE_CITY = {
     NAME: 'New York',
     STATE_CODE: 'NY',
 }
 
+#this is city_cache
 city_cache = {
     1: SAMPLE_CITY,
 }
