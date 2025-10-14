@@ -21,24 +21,7 @@ SAMPLE_CITY = {
 city_cache = {
     1: SAMPLE_CITY,
 }
-# For the is_valid_state func
-# states:
-AUTHOR_REV = 'AUR'
-COPY_EDIT = 'CED'
-IN_REF_REV = 'REV'
-REJECTED = 'REJ'
-SUBMITTED = 'SUB'
-WITHDRAWN = 'WIT'
-TEST_STATE = SUBMITTED
 
-VALID_STATES = [
-    AUTHOR_REV,
-    COPY_EDIT,
-    IN_REF_REV,
-    REJECTED,
-    SUBMITTED,
-    WITHDRAWN,
-]
 
 def db_connect(success_ratio: int) -> bool:
     """
@@ -46,18 +29,13 @@ def db_connect(success_ratio: int) -> bool:
     """
     return randint(1, success_ratio) % success_ratio
 
-def get_states() ->list:
-    return VALID_STATES
 
 def is_valid_id(_id: str) -> bool:
-    return state in VALID_STATES
-
-#def is_valid_id(_id: str) -> bool:
-#    if not isinstance(_id, str):
-#        return False
-#    if len(_id) < MIN_ID_LEN:
-#        return False
-#    return True
+    if not isinstance(_id, str):
+        return False
+    if len(_id) < MIN_ID_LEN:
+        return False
+    return True
 
 
 def num_cities() -> int:
