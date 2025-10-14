@@ -31,7 +31,7 @@ REJECTED = 'REJ'
 SUBMITTED = 'SUB'
 WITHDRAWN = 'WIT'
 TEST_STATE = SUBMITTED
-        
+
 VALID_STATES = [
     AUTHOR_REV,
     COPY_EDIT,
@@ -49,19 +49,20 @@ def db_connect(success_ratio: int) -> bool:
     return randint(1, success_ratio) % success_ratio
 
 
-def get_states() ->list:
-    return VALID_STATES 
-    
-    
-def is_valid_id(state: str) -> bool:
-    return state in VALID_STATES  
+def get_states() -> list:
+    return VALID_STATES
 
-# def is_valid_id(_id: str) -> bool:
-#    if not isinstance(_id, str):
-#        return False
-#    if len(_id) < MIN_ID_LEN:
-#        return False
-#    return True
+
+def is_valid_state(state: str) -> bool:
+    return state in VALID_STATES
+
+
+def is_valid_id(_id: str) -> bool:
+    if not isinstance(_id, str):
+        return False
+    if len(_id) < MIN_ID_LEN:
+        return False
+    return True
 
 
 def num_cities() -> int:
