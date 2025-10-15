@@ -33,14 +33,15 @@ def test_create_bad_param_type():
     with pytest.raises(ValueError):
         qry.create(17)
 
-
+# test case when database connection is successful
 @patch('cities.queries.db_connect', return_value=True, autospec=True)
 def test_read(mock_db_connect):
-    cities = qry.read()
+    cities = qry.read() # call read function from queries.py
     assert isinstance(cities, dict)
-    assert len(cities) > 1
+    assert len(cities) > 1 # ensure there is more than one city
 
+# test case when database connection fails
 @patch('cities.queries.db_connect', return_value=False, autospec=True)
 def test_read(mock_db_connect):
-    with pytest.raises(ConnectionError):
-        cities = qry.read()
+    with pytest.raises(ConnectionError): # expect a ConnectionError to be raised when db_connect fails
+        cities = qry.read() # call read() which shoudl raise the error
