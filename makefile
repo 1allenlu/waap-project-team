@@ -1,5 +1,7 @@
 include common.mk
 
+export PYTHONPATH := $(shell pwd)
+
 # Our directories
 CITIES_DIR = cities
 DB_DIR = data
@@ -22,7 +24,7 @@ all_tests: FORCE
 
 dev_env: FORCE
 	pip install -r $(REQ_DIR)/requirements-dev.txt
-	@echo "You should set PYTHONPATH to: "
+	@echo "PYTHONPATH is automatically set to: "
 	@echo $(shell pwd)
 
 docs: FORCE
