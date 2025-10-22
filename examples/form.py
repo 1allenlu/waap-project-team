@@ -1,5 +1,8 @@
 """
-This module provides the glossary query form
+Glossary login query form.
+
+This module assembles a form definition (as plain Python data)
+that other parts of the app (and Swagger) can consume.
 """
 
 import examples.form_filler as ff
