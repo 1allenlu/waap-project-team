@@ -17,10 +17,8 @@ SAMPLE_CITY = {
     STATE_CODE: 'NY',
 }
 
-# this is city_cache
-city_cache = {
-    1: SAMPLE_CITY,
-}
+# In-memory "database" of cities
+city_cache = {}
 
 # For the is_valid_state func
 # states:
@@ -48,6 +46,12 @@ def db_connect(success_ratio: int) -> bool:
     """
     return randint(1, success_ratio) % success_ratio
 
+# Delete a city by its ID
+def delete(city_id: str) -> bool:
+    if city_id not in city_cache:
+        raise ValueError(f'No such city: {city_id}')
+    del city_cache[city_id]
+    return True
 
 def get_states() -> list:
     return VALID_STATES
