@@ -1,11 +1,16 @@
-
 """
-This file deals with our city-level data.
+City-level data utilities.
+
+This module provides:
+- In-memory "city_cache" storage and a SAMPLE_CITY example
+- Basic validation helpers for IDs and workflow states
+- A toy DB connection check (randomized)
+- CRUD-ish helpers (create/read)
 """
 from random import randint
 
 
-MIN_ID_LEN = 1
+MIN_ID_LEN = 1  # Minimum length for a city ID string
 
 ID = 'id'
 NAME = 'name'
