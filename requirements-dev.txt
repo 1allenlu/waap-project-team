@@ -1,4 +1,19 @@
+# ==============================================================================
+# Development Dependencies - WAAP Project
+# ==============================================================================
+# These packages are required for development, testing, and code quality.
+# Install with: pip install -r requirements-dev.txt
+# This automatically includes all production requirements via -r requirements.txt
+# ==============================================================================
+
+# Include all production dependencies
 -r requirements.txt
+
+# flake8 - Python linter for code style checking (PEP 8 compliance)
 flake8
+
+# pytest - Testing framework for Python unit and integration tests
 pytest
+
+# pytest-cov - Code coverage plugin for pytest (generates coverage reports)
 pytest-cov

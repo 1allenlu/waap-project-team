@@ -1,5 +1,21 @@
+# ==============================================================================
+# Production Dependencies - WAAP Project
+# ==============================================================================
+# These packages are required to run the application in production.
+# Install with: pip install -r requirements.txt
+# ==============================================================================
+
+# Flask Framework - Web application framework
 flask==3.1.2
+
+# Flask-RESTX - REST API extension for Flask with automatic Swagger documentation
 flask-restx==1.3.0
+
+# Flask-CORS - Cross-Origin Resource Sharing (CORS) handling for Flask
 flask_cors
+
+# PyMongo - Python driver for MongoDB database operations
 pymongo
+
+# Werkzeug - WSGI utility library for Python (Flask dependency, pinned for compatibility)
 werkzeug==3.1.3

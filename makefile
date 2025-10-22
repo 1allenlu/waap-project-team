@@ -5,12 +5,21 @@
 # (Web Application and API Protection) project.
 #
 # Common targets:
+#   make help       - Display this help message (default target)
 #   make dev_env    - Set up development environment with dependencies
 #   make all_tests  - Run all test suites across all modules
 #   make prod       - Run tests and push to GitHub (production workflow)
 #   make github     - Commit and push changes to master branch
 #   make docs       - Generate project documentation
+#
+# Usage examples:
+#   make dev_env                    # First-time setup
+#   make all_tests                  # Run tests before committing
+#   make prod                       # Deploy to production
 # ==============================================================================
+
+# Default target - show help when running 'make' with no arguments
+.DEFAULT_GOAL := help
 
 # Include common makefile definitions and shared variables
 include common.mk
@@ -31,9 +40,44 @@ SERVER_DIR = server          # Server and API implementation
 # ==============================================================================
 # Phony Targets
 # ==============================================================================
+# Declare phony targets to avoid conflicts with files of the same name
+# and ensure they always execute even if a file with that name exists
+.PHONY: help prod github all_tests dev_env docs clean FORCE
+
 # FORCE: Utility target to force execution of dependent targets
 # This ensures targets always run regardless of file timestamps
 FORCE:
+
+# ==============================================================================
+# Help Target
+# ==============================================================================
+# help: Display available make targets with descriptions
+# This is the default target when you run 'make' with no arguments
+help:
+	@echo "===================================================================="
+	@echo "WAAP Project Team - Available Make Targets"
+	@echo "===================================================================="
+	@echo ""
+	@echo "Development:"
+	@echo "  make dev_env    - Install development dependencies"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make all_tests  - Run all test suites (cities, security, server)"
+	@echo ""
+	@echo "Deployment:"
+	@echo "  make prod       - Run tests and push to GitHub (full pipeline)"
+	@echo "  make github     - Commit all changes and push to master"
+	@echo ""
+	@echo "Documentation:"
+	@echo "  make docs       - Generate project documentation"
+	@echo ""
+	@echo "Utility:"
+	@echo "  make clean      - Remove temporary files and caches"
+	@echo "  make help       - Display this help message"
+	@echo ""
+	@echo "===================================================================="
+	@echo "Current PYTHONPATH: $(PYTHONPATH)"
+	@echo "===================================================================="
 
 # ==============================================================================
 # Production Deployment Workflow
@@ -81,3 +125,28 @@ dev_env: FORCE
 # Builds documentation from source code and docstrings
 docs: FORCE
 	cd $(API_DIR); make docs
+
+# ==============================================================================
+# Cleanup
+# ==============================================================================
+# clean: Remove temporary files, Python cache, and build artifacts
+# Useful for ensuring a fresh build or freeing up disk space
+clean: FORCE
+	@echo "Cleaning up temporary files and caches..."
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	find . -type f -name "*.pyo" -delete 2>/dev/null || true
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".coverage" -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name ".DS_Store" -delete 2>/dev/null || true
+	@echo "Cleanup complete!"
+
+# ==============================================================================
+# Additional Notes
+# ==============================================================================
+# - All targets use FORCE dependency to ensure they run every time
+# - The PYTHONPATH is automatically set to the project root for all commands
+# - Test failures will stop the 'prod' target from pushing to GitHub
+# - The '-' prefix on 'git commit' allows it to fail if there's nothing to commit
+# ==============================================================================
