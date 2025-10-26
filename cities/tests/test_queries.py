@@ -9,6 +9,23 @@ def temp_city():
     new_rec_id = qry.create(qry.SAMPLE_CITY)
     yield new_rec_id
 
+@pytest.fixture(scope='function')
+def manual_temp_city(monkeypatch):
+    monkeypatch.setattr(qry, 'db_connect', lambda *_: True)
+    qry.city_cache.clear()
+    qry.city_cache['m1'] = dict(qry.SAMPLE_CITY)
+    yield 'm1'
+    qry.city_cache.clear()
+
+@patch('cities.queries.city_cache', autospec=True)
+@patch('cities.queries.db_connect', return_value=True, autospec=True)
+def test_create_calls_db_create(mock_db_connect, mock_city_cache):
+    # ensure creating calls into the in-memory cache 
+    new_id = qry.create(qry.SAMPLE_CITY)
+    # city_cache.__setitem__ should have been called to store the new record
+    assert mock_city_cache.__setitem__.called
+    assert qry.is_valid_id(new_id)
+
 @pytest.mark.skip('This is an example of a bad test!')
 def test_bad_test_for_num_cities():
     assert qry.num_cities() == len(qry.city_cache)
@@ -46,9 +63,8 @@ def test_delete(mock_db_connect, temp_city):
 
 @patch('cities.queries.db_connect', return_value=True, autospec=True)
 def test_delete_not_there(mock_db_connect, temp_city):
-        cities = qry.read()
-        assert isinstance(cities, dict)
-        assert temp_city in cities
+    with pytest.raises(ValueError):
+        qry.delete('some value that is not there')
 
 # test case when database connection fails
 @patch('cities.queries.db_connect', return_value=False, autospec=True)
