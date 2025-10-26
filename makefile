@@ -70,7 +70,7 @@ all_tests: FORCE
 # Installs all development dependencies and displays PYTHONPATH configuration
 # Run this first when setting up the project on a new machine
 dev_env: FORCE
-	pip install -r $(REQ_DIR)/requirements-dev.txt
+	pip install -r $(CURDIR)/requirements-dev.txt
 	@echo "PYTHONPATH is automatically set to: "
 	@echo $(shell pwd)
 
