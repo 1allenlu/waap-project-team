@@ -53,3 +53,6 @@ class Cities(Resource):
         }
 
 @api.route(HELLO_EP)
+class Hello(Resource):
+    def get(self):
+       return {HELLO_RESP: 'world'}
