@@ -7,65 +7,24 @@ This module provides:
 - A toy DB connection check (randomized)
 - CRUD-ish helpers (create/read)
 """
-from random import randint
+# from random import randint
 
+import data.db_connect as dbc
 
-MIN_ID_LEN = 1  # Minimum length for a city ID string
+MIN_ID_LEN = 1
+
+CITY_COLLECTION = 'cities'
 
 ID = 'id'
 NAME = 'name'
 STATE_CODE = 'state_code'
 
-# this is sample_city
 SAMPLE_CITY = {
     NAME: 'New York',
     STATE_CODE: 'NY',
 }
 
-# In-memory "database" of cities
 city_cache = {}
-
-# For the is_valid_state func
-# states:
-AUTHOR_REV = 'AUR'
-COPY_EDIT = 'CED'
-IN_REF_REV = 'REV'
-REJECTED = 'REJ'
-SUBMITTED = 'SUB'
-WITHDRAWN = 'WIT'
-TEST_STATE = SUBMITTED
-
-VALID_STATES = [
-    AUTHOR_REV,
-    COPY_EDIT,
-    IN_REF_REV,
-    REJECTED,
-    SUBMITTED,
-    WITHDRAWN,
-]
-
-
-def db_connect(success_ratio: int) -> bool:
-    """
-    Return True if connected, False if not.
-    """
-    return randint(1, success_ratio) % success_ratio
-
-
-# Delete a city by its ID
-def delete(city_id: str) -> bool:
-    if city_id not in city_cache:
-        raise ValueError(f'No such city: {city_id}')
-    del city_cache[city_id]
-    return True
-
-
-def get_states() -> list:
-    return VALID_STATES
-
-
-def is_valid_state(state: str) -> bool:
-    return state in VALID_STATES
 
 
 def is_valid_id(_id: str) -> bool:
@@ -81,18 +40,24 @@ def num_cities() -> int:
 
 
 def create(flds: dict) -> str:
+    dbc.connect_db()
     if not isinstance(flds, dict):
         raise ValueError(f'Bad type for {type(flds)=}')
     if not flds.get(NAME):
         raise ValueError(f'Bad value for {flds.get(NAME)=}')
-    new_id = str(len(city_cache) + 1)
-    city_cache[new_id] = flds
+    new_id = dbc.create(CITY_COLLECTION, flds)
+    print(f'{new_id=}')
     return new_id
 
 
+def delete(city_id: str) -> bool:
+    if city_id not in city_cache:
+        raise ValueError(f'No such city: {city_id}')
+    del city_cache[city_id]
+    return True
+
+
 def read() -> dict:
-    if not db_connect(3):
-        raise ConnectionError('Could not connec to DB.')
     return city_cache
 
 
