@@ -57,4 +57,3 @@ class Cities(Resource):
 class Hello(Resource):
     def get(self):
         return {HELLO_RESP: 'world'}
-
