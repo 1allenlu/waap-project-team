@@ -52,7 +52,9 @@ class Cities(Resource):
             NUM_RECS: num_recs,
         }
 
+
 @api.route(HELLO_EP)
 class Hello(Resource):
     def get(self):
-       return {HELLO_RESP: 'world'}
+        return {HELLO_RESP: 'world'}
+
