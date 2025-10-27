@@ -13,6 +13,13 @@ country_cache = {
     "3": {NAME: "Mexico",        CAPITAL: "Mexico City"},
 }
 
+country_cache = {}
+
 def read() -> dict:
     """Return all countries (in-memory)."""
     return country_cache
+
+def get_country_by_id(country_id: str)->dict:
+    if country_id not in conutry_cache:
+	raise ValueError(f"No such country")
+    return country_cahce[country_id]
