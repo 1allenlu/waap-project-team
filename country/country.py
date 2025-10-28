@@ -20,6 +20,6 @@ def read() -> dict:
     return country_cache
 
 def get_country_by_id(country_id: str)->dict:
-    if country_id not in conutry_cache:
-	raise ValueError(f"No such country")
+    if country_id not in country_cache:
+        raise ValueError(f"No such country")
     return country_cahce[country_id]
