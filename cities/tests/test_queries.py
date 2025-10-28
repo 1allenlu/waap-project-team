@@ -3,6 +3,38 @@ import pytest
 
 import cities.queries as qry
 
+@pytest.fixture
+def multiple_cities():
+    """Fixture that provides multiple test cities"""
+    return [
+        {'name': 'Boston', 'state_code': 'MA'},
+        {'name': 'Chicago', 'state_code': 'IL'},
+        {'name': 'Seattle', 'state_code': 'WA'}
+    ]
+
+@patch('cities.queries.dbc.create')
+@patch('cities.queries.dbc.connect_db')
+def test_create_with_mock(mock_connect, mock_create):
+    """Test create function with mocked database"""
+    mock_create.return_value = 'mock_id_12345'
+    
+    result = qry.create({'name': 'Test City', 'state_code': 'TC'})
+    
+    assert result == 'mock_id_12345'
+    mock_connect.assert_called_once()
+    mock_create.assert_called_once()
+    
+def test_is_valid_id_with_non_string():
+    """Test that non-string IDs return False"""
+    # Could also test with raises if you change is_valid_id to raise
+    assert qry.is_valid_id(123) == False
+    assert qry.is_valid_id(None) == False
+    
+@pytest.mark.skip("Waiting for update functionality to be implemented")
+def test_update_city():
+    """Test updating a city's information"""
+    pass
+
 
 @pytest.fixture(scope='function')
 def temp_city():
