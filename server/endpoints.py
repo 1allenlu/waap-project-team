@@ -9,6 +9,7 @@ from flask_restx import Resource, Api  # , fields  # Namespace
 from flask_cors import CORS
 
 # import werkzeug.exceptions as wz
+
 import cities.queries as cqry
 
 app = Flask(__name__)
@@ -25,7 +26,6 @@ ENDPOINT_RESP = 'Available endpoints'
 
 HELLO_EP = '/hello'
 HELLO_RESP = 'hello'
-
 
 CITIES_EPS = '/cities'
 CITY_RESP = 'Cities'
@@ -46,7 +46,6 @@ class Cities(Resource):
             num_recs = len(cities)
         except ConnectionError as e:
             return {ERROR: str(e)}
-        print(f'{cities=}')
         return {
             CITY_RESP: cities,
             NUM_RECS: num_recs,
@@ -54,6 +53,27 @@ class Cities(Resource):
 
 
 @api.route(HELLO_EP)
-class Hello(Resource):
+class HelloWorld(Resource):
+    """
+    The purpose of the HelloWorld class is to have a simple test to see if the
+    app is working at all.
+    """
     def get(self):
+        """
+        A trivial endpoint to see if the server is running.
+        """
         return {HELLO_RESP: 'world'}
+
+
+@api.route(ENDPOINT_EP)
+class Endpoints(Resource):
+    """
+    This class will serve as live, fetchable documentation of what endpoints
+    are available in the system.
+    """
+    def get(self):
+        """
+        The `get()` method will return a sorted list of available endpoints.
+        """
+        endpoints = sorted(rule.rule for rule in api.app.url_map.iter_rules())
+        return {"Available endpoints": endpoints}
