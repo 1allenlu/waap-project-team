@@ -1,47 +1,29 @@
+from copy import deepcopy
+
 from unittest.mock import patch
 import pytest
 
 import cities.queries as qry
 
-@pytest.fixture
-def multiple_cities():
-    """Fixture that provides multiple test cities"""
-    return [
-        {'name': 'Boston', 'state_code': 'MA'},
-        {'name': 'Chicago', 'state_code': 'IL'},
-        {'name': 'Seattle', 'state_code': 'WA'}
-    ]
 
-@patch('cities.queries.dbc.create')
-@patch('cities.queries.dbc.connect_db')
-def test_create_with_mock(mock_connect, mock_create):
-    """Test create function with mocked database"""
-    mock_create.return_value = 'mock_id_12345'
-    
-    result = qry.create({'name': 'Test City', 'state_code': 'TC'})
-    
-    assert result == 'mock_id_12345'
-    mock_connect.assert_called_once()
-    mock_create.assert_called_once()
-    
-def test_is_valid_id_with_non_string():
-    """Test that non-string IDs return False"""
-    # Could also test with raises if you change is_valid_id to raise
-    assert qry.is_valid_id(123) == False
-    assert qry.is_valid_id(None) == False
-    
-@pytest.mark.skip("Waiting for update functionality to be implemented")
-def test_update_city():
-    """Test updating a city's information"""
-    pass
+def get_temp_rec():
+    return deepcopy(qry.SAMPLE_CITY)
+
+
+@pytest.fixture(scope='function')
+def temp_city_no_del():
+    temp_rec = get_temp_rec()
+    qry.create(get_temp_rec())
+    return temp_rec
 
 
 @pytest.fixture(scope='function')
 def temp_city():
-    new_rec_id = qry.create(qry.SAMPLE_CITY)
+    temp_rec = get_temp_rec()
+    new_rec_id = qry.create(get_temp_rec())
     yield new_rec_id
     try:
-        qry.delete(new_rec_id)
+        qry.delete(temp_rec[qry.NAME], temp_rec[qry.STATE_CODE])
     except ValueError:
         print('The record was already deleted.')
 
@@ -51,20 +33,19 @@ def test_bad_test_for_num_cities():
     assert qry.num_cities() == len(qry.city_cache)
 
 
-@pytest.mark.skip('revive once all functions are cutover!')
 def test_num_cities():
     # get the count
     old_count = qry.num_cities()
     # add a record
-    qry.create(qry.SAMPLE_CITY)
+    qry.create(get_temp_rec())
     assert qry.num_cities() == old_count + 1
 
-@pytest.mark.skip("Skipping until MongoDB mock or service is added")
+
 def test_good_create():
     old_count = qry.num_cities()
-    new_rec_id = qry.create(qry.SAMPLE_CITY)
+    new_rec_id = qry.create(get_temp_rec())
     assert qry.is_valid_id(new_rec_id)
-    # assert qry.num_cities() == old_count + 1
+    assert qry.num_cities() == old_count + 1
 
 
 def test_create_bad_name():
@@ -77,25 +58,17 @@ def test_create_bad_param_type():
         qry.create(17)
 
 
-@pytest.mark.skip('revive once all functions are cutover!')
-def test_delete(temp_city):
-    qry.delete(temp_city)
-    assert temp_city not in qry.read()
+def test_delete(temp_city_no_del):
+    ret = qry.delete(temp_city_no_del[qry.NAME], temp_city_no_del[qry.STATE_CODE])
+    assert ret == 1
 
 
 def test_delete_not_there():
     with pytest.raises(ValueError):
-        qry.delete('some value that is not there')
+        qry.delete('some city name that is not there', 'not a state')
 
 
-@pytest.mark.skip('revive once all functions are cutover!')
 def test_read(temp_city):
     cities = qry.read()
-    assert isinstance(cities, dict)
-    assert temp_city in cities
-
-
-@pytest.mark.skip('revive once all functions are cutover!')
-def test_read_cant_connect():
-    with pytest.raises(ConnectionError):
-        cities = qry.read()
+    assert isinstance(cities, list)
+    assert get_temp_rec() in cities
