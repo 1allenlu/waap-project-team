@@ -1,14 +1,7 @@
-"""
-City-level data utilities.
 
-This module provides:
-- In-memory "city_cache" storage and a SAMPLE_CITY example
-- Basic validation helpers for IDs and workflow states
-- A toy DB connection check (randomized)
-- CRUD-ish helpers (create/read)
 """
-# from random import randint
-
+This file deals with our city-level data.
+"""
 import data.db_connect as dbc
 
 MIN_ID_LEN = 1
@@ -36,11 +29,11 @@ def is_valid_id(_id: str) -> bool:
 
 
 def num_cities() -> int:
-    return len(city_cache)
+    return len(read())
 
 
 def create(flds: dict) -> str:
-    dbc.connect_db()
+    print(f'{flds=}')
     if not isinstance(flds, dict):
         raise ValueError(f'Bad type for {type(flds)=}')
     if not flds.get(NAME):
@@ -50,15 +43,15 @@ def create(flds: dict) -> str:
     return new_id
 
 
-def delete(city_id: str) -> bool:
-    if city_id not in city_cache:
-        raise ValueError(f'No such city: {city_id}')
-    del city_cache[city_id]
-    return True
+def delete(name: str, state_code: str) -> bool:
+    ret = dbc.delete(CITY_COLLECTION, {NAME: name, STATE_CODE: state_code})
+    if ret < 1:
+        raise ValueError(f'City not found: {name}, {state_code}')
+    return ret
 
 
 def read() -> dict:
-    return city_cache
+    return dbc.read(CITY_COLLECTION)
 
 
 def main():
