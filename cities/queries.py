@@ -3,7 +3,6 @@
 This file deals with our city-level data.
 """
 import data.db_connect as dbc
-
 MIN_ID_LEN = 1
 
 CITY_COLLECTION = 'cities'
@@ -18,7 +17,7 @@ SAMPLE_CITY = {
 }
 
 city_cache = {}
-
+SORTABLE_FIELDS = {NAME, STATE_CODE}
 
 def is_valid_id(_id: str) -> bool:
     if not isinstance(_id, str):
@@ -49,17 +48,15 @@ def delete(name: str, state_code: str) -> bool:
         raise ValueError(f'City not found: {name}, {state_code}')
     return ret
 
-def read_sorted(sort: str | None = None) -> list[dict]:
-    items = dbc.read(CITY_COLLECTION)  # expects list[dict]
+def read_sorted(sort=None):
+    items = dbc.read(CITY_COLLECTION)
     if not sort:
         return items
     desc = sort.startswith("-")
     key = sort[1:] if desc else sort
-
     if key not in SORTABLE_FIELDS:
-        return items  # ignore unknown keys
+        return items
     return sorted(items, key=lambda r: (r.get(key) or "").upper(), reverse=desc)
-
 
 def read() -> dict:
     return dbc.read(CITY_COLLECTION)
