@@ -31,12 +31,22 @@ CITIES_EPS = '/cities'
 CITY_RESP = 'Cities'
 
 
+sort_parser = api.parser()
+sort_parser.add_argument(
+    "sort",
+    type=str,
+    required=False,
+    help="Sort by name or state_code; prefix with '-' for descending (e.g., -name)",
+)
+
+
 @api.route(f'{CITIES_EPS}/{READ}')
 class Cities(Resource):
     """
     The purpose of the HelloWorld class is to have a simple test to see if the
     app is working at all.
     """
+    @api.expect(sort_parser)
     def get(self):
         """
         A trivial endpoint to see if the server is running.
@@ -44,7 +54,7 @@ class Cities(Resource):
         try:
             args = sort_parser.parse_args()
             sort = args.get("sort")
-            cities = cqry.read()
+            cities = cqry.read_sorted(sort)
             num_recs = len(cities)
         except ConnectionError as e:
             return {ERROR: str(e)}
