@@ -64,6 +64,20 @@ class Cities(Resource):
         }
 
 
+    @api.expect(api.model('CityCreate', {
+        'name': {'type': 'string', 'required': True, 'description': 'City name'},
+        'state_code': {'type': 'string', 'required': False, 'description': 'State code'},
+    }))
+    def post(self):
+        """Create a new city record"""
+        payload = api.payload
+        try:
+            new_id = cqry.create(payload)
+        except ValueError as e:
+            return {ERROR: str(e)}, 400
+        return { 'id': str(new_id) }, 201
+
+
 @api.route(HELLO_EP)
 class HelloWorld(Resource):
     """
