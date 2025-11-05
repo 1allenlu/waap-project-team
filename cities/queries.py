@@ -48,6 +48,7 @@ def delete(name: str, state_code: str) -> bool:
         raise ValueError(f'City not found: {name}, {state_code}')
     return ret
 
+
 def read_sorted(sort=None):
     items = dbc.read(CITY_COLLECTION)
     if not sort:
@@ -56,7 +57,11 @@ def read_sorted(sort=None):
     key = sort[1:] if desc else sort
     if key not in SORTABLE_FIELDS:
         return items
-    return sorted(items, key=lambda r: (r.get(key) or "").upper(), reverse=desc)
+    def keyfunc(rec):
+        return (rec.get(key) or "").upper()
+
+    return sorted(items, key=keyfunc, reverse=desc)
+
 
 def read() -> dict:
     return dbc.read(CITY_COLLECTION)

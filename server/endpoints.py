@@ -4,7 +4,7 @@ The endpoint called `endpoints` will return all available endpoints.
 """
 # from http import HTTPStatus
 
-from flask import Flask  # , request
+from flask import Flask# , request
 from flask_restx import Resource, Api  # , fields  # Namespace
 from flask_cors import CORS
 
@@ -42,6 +42,7 @@ class Cities(Resource):
         A trivial endpoint to see if the server is running.
         """
         try:
+            sort = request.args.get("sort")
             cities = cqry.read()
             num_recs = len(cities)
         except ConnectionError as e:
