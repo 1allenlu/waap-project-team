@@ -22,6 +22,7 @@ SORTABLE_FIELDS = {NAME, STATE_CODE}
 
 
 def is_valid_id(_id: str) -> bool:
+    # Accept only non-empty strings; numeric or other types are rejected early
     if not isinstance(_id, str):
         return False
     if len(_id) < MIN_ID_LEN:
