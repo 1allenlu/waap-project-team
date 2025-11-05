@@ -17,7 +17,9 @@ SAMPLE_CITY = {
 }
 
 city_cache = {}
+
 SORTABLE_FIELDS = {NAME, STATE_CODE}
+
 
 def is_valid_id(_id: str) -> bool:
     if not isinstance(_id, str):
@@ -53,10 +55,12 @@ def read_sorted(sort=None):
     items = dbc.read(CITY_COLLECTION)
     if not sort:
         return items
+
     desc = sort.startswith("-")
     key = sort[1:] if desc else sort
     if key not in SORTABLE_FIELDS:
         return items
+
     def keyfunc(rec):
         return (rec.get(key) or "").upper()
 
