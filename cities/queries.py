@@ -16,7 +16,7 @@ SAMPLE_CITY = {
     STATE_CODE: 'NY',
 }
 
-city_cache = {}
+city_cache = {} # Placeholder for potential in-memory caching (currently unused)
 
 SORTABLE_FIELDS = {NAME, STATE_CODE}
 
