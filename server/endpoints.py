@@ -36,7 +36,7 @@ sort_parser.add_argument(
     "sort",
     type=str,
     required=False,
-    help="Sort by name or state_code; prefix with '-' for descending (e.g., -name)",
+    help="Sort by name/state_code; use '-name' for descending",
 )
 
 
