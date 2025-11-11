@@ -11,6 +11,7 @@ from flask_cors import CORS
 # import werkzeug.exceptions as wz
 
 import cities.queries as cqry
+import country.country as cntry
 
 app = Flask(__name__)
 CORS(app)
@@ -30,6 +31,8 @@ HELLO_RESP = 'hello'
 CITIES_EPS = '/cities'
 CITY_RESP = 'Cities'
 
+COUNTRIES_EP = '/countries'
+COUNTRY_RESP = 'Countries'
 
 sort_parser = api.parser()
 sort_parser.add_argument(
@@ -98,6 +101,28 @@ class CitiesRoot(Resource):
             return {ERROR: str(e)}, 400
         return { 'id': str(new_id) }, 201
 
+
+@api.route(f'{COUNTRIES_EP}/read')
+class Countries(Resource):
+    def get(self):
+        """
+        Return all countries
+        """
+        try:
+            countries = cntry.read()
+            num_recs = len(countries)
+        except Exception as e:
+            return {ERROR: str(e)}, 500
+        return {
+            COUNTRY_RESP: countries,
+            NUM_RECS: num_recs,
+        }
+
+    @api.expect(api.model('CountryCreate', {
+        'id': {'type': 'string', 'required': True, 'description': 'Country ID'},
+        'name': {'type': 'string', 'required': True, 'description': 'Country name'},
+        'capital': {'type': 'string', 'required': True, 'description': 'Capital city'},
+    }))
 
 @api.route(HELLO_EP)
 class HelloWorld(Resource):

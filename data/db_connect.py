@@ -8,6 +8,7 @@ import logging
 from functools import wraps
 
 import pymongo as pm
+from contextlib import contextmanager
 
 LOCAL = "0"
 CLOUD = "1"
