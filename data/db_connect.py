@@ -26,6 +26,284 @@ CONNECT_RETRIES = int(os.environ.get('DB_CONNECT_RETRIES', '3'))
 RETRY_DELAY_SECONDS = float(os.environ.get('DB_CONNECT_RETRY_DELAY', '1'))
 
 
+def measure_performance(fn):
+    """Track performance metrics for database operations."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        start_memory = None
+        
+        try:
+            import psutil
+            process = psutil.Process(os.getpid())
+            start_memory = process.memory_info().rss / 1024 / 1024  # MB
+        except ImportError:
+            pass
+        
+        result = fn(*args, **kwargs)
+        
+        elapsed = time.time() - start_time
+        logger.info(f'{fn.__name__} took {elapsed:.3f}s')
+        
+        if start_memory:
+            end_memory = process.memory_info().rss / 1024 / 1024
+            logger.info(f'{fn.__name__} memory delta: {end_memory - start_memory:.2f}MB')
+        
+        return result
+    
+    return wrapper
+
+
+def retry_on_failure(max_retries=3, delay=1, backoff=2):
+    """Retry database operations on failure with exponential backoff."""
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            current_delay = delay
+            last_exception = None
+            
+            for attempt in range(1, max_retries + 1):
+                try:
+                    return fn(*args, **kwargs)
+                except (pm.errors.AutoReconnect, 
+                        pm.errors.NetworkTimeout,
+                        pm.errors.ServerSelectionTimeoutError) as e:
+                    last_exception = e
+                    logger.warning(
+                        f'Attempt {attempt}/{max_retries} failed for {fn.__name__}: {e}'
+                    )
+                    
+                    if attempt < max_retries:
+                        logger.info(f'Retrying in {current_delay}s...')
+                        time.sleep(current_delay)
+                        current_delay *= backoff
+                    else:
+                        logger.error(f'All {max_retries} attempts failed for {fn.__name__}')
+                        raise last_exception
+            
+            raise last_exception
+        
+        return wrapper
+    return decorator
+
+
+def validate_inputs(fn):
+    """Validate inputs before database operations."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        collection = kwargs.get('collection') or (args[0] if args else None)
+        
+        if collection and not isinstance(collection, str):
+            raise ValueError(f'Collection name must be a string, got {type(collection)}')
+        
+        if collection and not collection.strip():
+            raise ValueError('Collection name cannot be empty')
+        
+        # Validate document if present
+        doc = kwargs.get('doc') or (args[1] if len(args) > 1 else None)
+        if doc is not None and not isinstance(doc, dict):
+            raise ValueError(f'Document must be a dictionary, got {type(doc)}')
+        
+        return fn(*args, **kwargs)
+    
+    return wrapper
+
+
+def cache_results(ttl_seconds=60):
+    """Cache database read results for a specified time."""
+    cache = {}
+    
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            # Create a cache key from function name and arguments
+            cache_key = f"{fn.__name__}:{str(args)}:{str(sorted(kwargs.items()))}"
+            current_time = time.time()
+            
+            # Check if we have a cached result that's still valid
+            if cache_key in cache:
+                result, timestamp = cache[cache_key]
+                if current_time - timestamp < ttl_seconds:
+                    logger.debug(f'Cache hit for {fn.__name__}')
+                    return result
+            
+            # Call the function and cache the result
+            result = fn(*args, **kwargs)
+            cache[cache_key] = (result, current_time)
+            
+            return result
+        
+        # Add a method to clear cache
+        wrapper.clear_cache = lambda: cache.clear()
+        
+        return wrapper
+    return decorator
+
+
+def handle_mongo_errors(fn):
+    """Convert MongoDB exceptions to more user-friendly error messages."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except pm.errors.DuplicateKeyError as e:
+            logger.error(f'Duplicate key error in {fn.__name__}: {e}')
+            raise ValueError(f'Duplicate entry detected')
+        except pm.errors.InvalidDocument as e:
+            logger.error(f'Invalid document in {fn.__name__}: {e}')
+            raise ValueError(f'Invalid document format: {str(e)}')
+        except pm.errors.WriteError as e:
+            logger.error(f'Write error in {fn.__name__}: {e}')
+            raise RuntimeError(f'Database write failed: {str(e)}')
+        except pm.errors.OperationFailure as e:
+            logger.error(f'Operation failure in {fn.__name__}: {e}')
+            raise RuntimeError(f'Database operation failed: {str(e)}')
+    
+    return wrapper
+
+
+def require_nonempty_filter(fn):
+    """Ensure filter is provided for delete/update operations."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        filt = kwargs.get('filt') or kwargs.get('filters')
+        if not filt:
+            filt = args[1] if len(args) > 1 else None
+        
+        if not filt:
+            logger.warning(f'{fn.__name__} called with empty filter - this affects all documents!')
+        
+        return fn(*args, **kwargs)
+    
+    return wrapper
+
+
+def log_detailed_operation(fn):
+    """Log database operations with detailed information."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        collection = kwargs.get('collection') or (args[0] if args else 'unknown')
+        db = kwargs.get('db', GEO_DB)
+        
+        logger.info(f'DB Operation: {fn.__name__} | Collection: {collection} | DB: {db}')
+        
+        start_time = time.time()
+        try:
+            result = fn(*args, **kwargs)
+            elapsed = time.time() - start_time
+            logger.info(f'Success: {fn.__name__} completed in {elapsed:.3f}s')
+            return result
+        except Exception as e:
+            elapsed = time.time() - start_time
+            logger.error(f'Failed: {fn.__name__} after {elapsed:.3f}s - {str(e)}')
+            raise
+    
+    return wrapper
+
+
+def rate_limit(calls_per_second=10):
+    """Rate limit database operations to prevent overload."""
+    last_called = {}
+    min_interval = 1.0 / calls_per_second
+    
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            now = time.time()
+            fn_name = fn.__name__
+            
+            if fn_name in last_called:
+                elapsed = now - last_called[fn_name]
+                if elapsed < min_interval:
+                    sleep_time = min_interval - elapsed
+                    logger.debug(f'Rate limiting {fn_name}, sleeping {sleep_time:.3f}s')
+                    time.sleep(sleep_time)
+            
+            last_called[fn_name] = time.time()
+            return fn(*args, **kwargs)
+        
+        return wrapper
+    return decorator
+
+
+def convert_empty_to_none(fn):
+    """Convert empty results to None instead of empty list/dict."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+        
+        if result is not None:
+            if isinstance(result, (list, dict)) and len(result) == 0:
+                return None
+        
+        return result
+    
+    return wrapper
+
+
+def ensure_connection_health(fn):
+    """Verify connection health before operation and log status."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        global client
+        
+        if client is None:
+            logger.warning(f'{fn.__name__} called with no client, connecting...')
+            connect_db()
+        
+        try:
+            # Quick health check
+            client.admin.command('ping')
+        except Exception as e:
+            logger.error(f'Connection health check failed: {e}')
+            connect_db()
+        
+        return fn(*args, **kwargs)
+    
+    return wrapper
+
+
+@contextmanager
+def db_session(db=GEO_DB):
+    """Context manager for database sessions with automatic cleanup."""
+    global client
+    session = None
+    try:
+        if client is None:
+            connect_db()
+        session = client.start_session()
+        logger.debug('Database session started')
+        yield session
+    except Exception as e:
+        logger.error(f'Session error: {e}')
+        raise
+    finally:
+        if session:
+            session.end_session()
+            logger.debug('Database session ended')
+
+
+def audit_operation(fn):
+    """Audit trail for database modifications."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        operation = fn.__name__
+        collection = kwargs.get('collection') or (args[0] if args else 'unknown')
+        timestamp = time.time()
+        
+        logger.info(f'AUDIT: {operation} on {collection} at {timestamp}')
+        
+        try:
+            result = fn(*args, **kwargs)
+            logger.info(f'AUDIT: {operation} completed successfully')
+            return result
+        except Exception as e:
+            logger.error(f'AUDIT: {operation} failed - {str(e)}')
+            raise
+    
+    return wrapper
+
+
 def needs_db(fn, *args, **kwargs):
     @wraps(fn)
     def wrapper(*args, **kwargs):
