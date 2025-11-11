@@ -3,6 +3,8 @@ All interaction with MongoDB should be through this file!
 We may be required to use a new database at any point.
 """
 import os
+import time
+import logging
 from functools import wraps
 
 import pymongo as pm
@@ -16,14 +18,35 @@ client = None
 
 MONGO_ID = '_id'
 
+# Configure logger for this module
+logger = logging.getLogger(__name__)
+
+# Retry configuration for connecting to MongoDB. Can be tuned via env vars.
+CONNECT_RETRIES = int(os.environ.get('DB_CONNECT_RETRIES', '3'))
+RETRY_DELAY_SECONDS = float(os.environ.get('DB_CONNECT_RETRY_DELAY', '1'))
+
 
 def needs_db(fn, *args, **kwargs):
     @wraps(fn)
     def wrapper(*args, **kwargs):
+        """Ensure a live MongoDB client exists before calling fn.
+
+        If the client is not set, or if the server is unreachable
+        (server_info raises), try to (re)connect.
+        """
         global client
-        if not client:
+        try:
+            if client is None:
+                connect_db()
+            else:
+                # A lightweight check to ensure the client is still connected.
+                # server_info() will raise if the server is not reachable.
+                client.server_info()
+        except Exception:
+            # Attempt to reconnect once
             connect_db()
         return fn(*args, **kwargs)
+
     return wrapper
 
 
@@ -36,21 +59,48 @@ def connect_db():
     client global.
     """
     global client
-    if client is None:  # not connected yet!
-        print('Setting client because it is None.')
-        if os.environ.get('CLOUD_MONGO', LOCAL) == CLOUD:
-            password = os.environ.get('MONGO_PASSWD')
-            if not password:
-                raise ValueError('You must set your password '
-                                 + 'to use Mongo in the cloud.')
-            print('Connecting to Mongo in the cloud.')
-            client = pm.MongoClient(f'mongodb+srv://gcallah:{password}'
-                                    + '@koukoumongo1.yud9b.mongodb.net/'
-                                    + '?retryWrites=true&w=majority')
-        else:
-            print("Connecting to Mongo locally.")
-            client = pm.MongoClient()
-    return client
+    if client is not None:
+        return client
+
+    last_exc = None
+    for attempt in range(1, CONNECT_RETRIES + 1):
+        try:
+            logger.info('Connecting to MongoDB (attempt %d/%d)', attempt, CONNECT_RETRIES)
+            if os.environ.get('CLOUD_MONGO', LOCAL) == CLOUD:
+                password = os.environ.get('MONGO_PASSWD')
+                if not password:
+                    raise ValueError('You must set your password to use Mongo in the cloud.')
+                logger.debug('Using cloud Mongo configuration')
+                client_candidate = pm.MongoClient(f'mongodb+srv://gcallah:{password}'
+                                                    + '@koukoumongo1.yud9b.mongodb.net/'
+                                                    + '?retryWrites=true&w=majority')
+            else:
+                logger.debug('Using local Mongo configuration')
+                client_candidate = pm.MongoClient()
+
+            # Verify connection by requesting server info; this will raise
+            # an exception if the server is unreachable.
+            client_candidate.server_info()
+
+            # Success: set global and return
+            client = client_candidate
+            logger.info('Connected to MongoDB successfully')
+            return client
+        except Exception as e:
+            logger.warning('MongoDB connection attempt %d failed: %s', attempt, e)
+            last_exc = e
+            try:
+                # Close candidate if it was created
+                if 'client_candidate' in locals():
+                    client_candidate.close()
+            except Exception:
+                pass
+            if attempt < CONNECT_RETRIES:
+                time.sleep(RETRY_DELAY_SECONDS)
+
+    # If we exit the loop without returning, raise the last exception
+    logger.error('Could not connect to MongoDB after %d attempts', CONNECT_RETRIES)
+    raise last_exc
 
 
 def convert_mongo_id(doc: dict):
@@ -114,7 +164,13 @@ def read_dict(collection, key, db=GEO_DB, no_id=True) -> dict:
     """
     Doesn't need db decorator because read() has it.
     """
-    recs = read(collection, db=db, no_id=no_id)
+    # Ensure there is a live connection for callers that may bypass read()
+    # by calling this function directly.
+    @needs_db
+    def _inner_read():
+        return read(collection, db=db, no_id=no_id)
+
+    recs = _inner_read()
     recs_as_dict = {}
     for rec in recs:
         recs_as_dict[rec[key]] = rec
