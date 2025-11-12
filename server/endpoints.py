@@ -42,7 +42,6 @@ sort_parser.add_argument(
     help="Sort by name/state_code; use '-name' for descending",
 )
 
-
 @api.route(f'{CITIES_EPS}/{READ}')
 class Cities(Resource):
     """
@@ -80,7 +79,6 @@ class Cities(Resource):
             return {ERROR: str(e)}, 400
         return { 'id': str(new_id) }, 201
 
-
 @api.route(CITIES_EPS)
 class CitiesRoot(Resource):
     """POST-only endpoint for creating cities at /cities
@@ -101,7 +99,6 @@ class CitiesRoot(Resource):
             return {ERROR: str(e)}, 400
         return { 'id': str(new_id) }, 201
 
-
 @api.route(f'{COUNTRIES_EP}/read')
 class Countries(Resource):
     def get(self):
@@ -119,11 +116,24 @@ class Countries(Resource):
         }
     @api.expect(api.model('CountryCreate', {
         'id': {'type': 'string', 'required': True, 'description': 'Country ID'},
-        'name': {'type': 'string', 'required': True, 'description'
-        :'Country name'},
-        'capital': {'type': 'string', 'required': True, 'description'
-        : 'Capital city'},
+        'name': {'type': 'string', 'required': True, 'description':'Country name'},
+        'capital': {'type': 'string', 'required': True, 'description': 'Capital city'},
     }))
+    def post(self):
+        """Add a new country to the in-memory cache."""
+        payload = api.payload
+        try:
+            country_id = payload.get('id')
+            if not country_id:
+                raise ValueError("id is required")
+            # add to the in-memory country cache
+            cntry.country_cache[country_id] = {
+                cntry.NAME: payload.get('name'),
+                cntry.CAPITAL: payload.get('capital'),
+            }
+        except Exception as e:
+            return {ERROR: str(e)}, 400
+        return {'Message': f'Country {country_id} added successfully'}, 201
 
 @api.route(HELLO_EP)
 class HelloWorld(Resource):

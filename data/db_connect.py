@@ -4,6 +4,7 @@ We may be required to use a new database at any point.
 """
 import os
 import time
+import re
 import logging
 from functools import wraps
 
@@ -19,12 +20,23 @@ client = None
 
 MONGO_ID = '_id'
 
+MIN_ID_LEN = 24
+MAX_ID_LEN = 24
+_OBJECTID_RE = re.compile(r'^[0-9a-fA-F]{24}$')
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
 # Retry configuration for connecting to MongoDB. Can be tuned via env vars.
 CONNECT_RETRIES = int(os.environ.get('DB_CONNECT_RETRIES', '3'))
 RETRY_DELAY_SECONDS = float(os.environ.get('DB_CONNECT_RETRY_DELAY', '1'))
+
+
+def is_valid_id(s) -> bool:
+    """Return True if s looks like a MongoDB ObjectId (24 hex chars)."""
+    if not isinstance(s, str):
+        return False
+    return bool(_OBJECTID_RE.fullmatch(s))
 
 
 def measure_performance(fn):
