@@ -42,6 +42,7 @@ sort_parser.add_argument(
     help="Sort by name/state_code; use '-name' for descending",
 )
 
+
 @api.route(f'{CITIES_EPS}/{READ}')
 class Cities(Resource):
     """
@@ -65,11 +66,11 @@ class Cities(Resource):
             NUM_RECS: num_recs,
         }
 
-
     @api.expect(api.model('CityCreate', {
         'name': {'type': 'string', 'required': True, 'description': 'City name'},
         'state_code': {'type': 'string', 'required': False, 'description': 'State code'},
     }))
+
     def post(self):
         """Create a new city record"""
         payload = api.payload
@@ -77,19 +78,22 @@ class Cities(Resource):
             new_id = cqry.create(payload)
         except ValueError as e:
             return {ERROR: str(e)}, 400
-        return { 'id': str(new_id) }, 201
+        return {'id': str(new_id)}, 201
+
 
 @api.route(CITIES_EPS)
 class CitiesRoot(Resource):
     """POST-only endpoint for creating cities at /cities
-
     Kept separate so clients can POST to /cities while the
     listing endpoint remains at /cities/read.
     """
     @api.expect(api.model('CityCreate', {
-        'name': {'type': 'string', 'required': True, 'description': 'City name'},
-        'state_code': {'type': 'string', 'required': False, 'description': 'State code'},
+        'name': {
+        'type': 'string', 'required': True, 'description': 'City name'},
+        'state_code': {
+        'type': 'string', 'required': False, 'description': 'State code'},
     }))
+
     def post(self):
         """Create a new city record"""
         payload = api.payload
@@ -97,7 +101,8 @@ class CitiesRoot(Resource):
             new_id = cqry.create(payload)
         except ValueError as e:
             return {ERROR: str(e)}, 400
-        return { 'id': str(new_id) }, 201
+        return {'id': str(new_id)}, 201
+
 
 @api.route(f'{COUNTRIES_EP}/read')
 class Countries(Resource):
@@ -114,11 +119,16 @@ class Countries(Resource):
             COUNTRY_RESP: countries,
             NUM_RECS: num_recs,
         }
+
     @api.expect(api.model('CountryCreate', {
-        'id': {'type': 'string', 'required': True, 'description': 'Country ID'},
-        'name': {'type': 'string', 'required': True, 'description':'Country name'},
-        'capital': {'type': 'string', 'required': True, 'description': 'Capital city'},
+        'id': {
+        'type': 'string', 'required': True, 'description': 'Country ID'},
+        'name': {
+        'type': 'string', 'required': True, 'description': 'Country name'},
+        'capital': {
+        'type': 'string', 'required': True, 'description': 'Capital city'},
     }))
+
     def post(self):
         """Add a new country to the in-memory cache."""
         payload = api.payload
@@ -134,6 +144,7 @@ class Countries(Resource):
         except Exception as e:
             return {ERROR: str(e)}, 400
         return {'Message': f'Country {country_id} added successfully'}, 201
+
 
 @api.route(HELLO_EP)
 class HelloWorld(Resource):
