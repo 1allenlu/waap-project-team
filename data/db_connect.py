@@ -317,28 +317,23 @@ def audit_operation(fn):
     return wrapper
 
 
-def needs_db(fn, *args, **kwargs):
+def needs_db(fn):                       
     @wraps(fn)
     def wrapper(*args, **kwargs):
         """Ensure a live MongoDB client exists before calling fn.
-
-        If the client is not set, or if the server is unreachable
-        (server_info raises), try to (re)connect.
-        """
+        If the client is not set, or if the server is unreachable (server_info raises), try to (re)connect. """
         global client
         try:
             if client is None:
                 connect_db()
             else:
-                # A lightweight check to ensure the client is still connected.
-                # server_info() will raise if the server is not reachable.
                 client.server_info()
         except Exception:
             # Attempt to reconnect once
             connect_db()
         return fn(*args, **kwargs)
-
     return wrapper
+
 
 
 def connect_db():
