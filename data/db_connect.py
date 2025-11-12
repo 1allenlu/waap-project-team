@@ -394,6 +394,17 @@ def connect_db():
     raise last_exc
 
 
+def needs_db(fn):                   
+    """Ensure we have a live Mongo client before any DB call.""" 
+    @wraps(fn)                      
+    def wrapper(*args, **kwargs):    
+        global client                
+        # If we don't have a client yet, connect               
+        if client is None:           
+            connect_db()            
+        return fn(*args, **kwargs)   
+    return wrapper                
+
 def convert_mongo_id(doc: dict):
     if MONGO_ID in doc:
         # Convert mongo ID to a string so it works as JSON
