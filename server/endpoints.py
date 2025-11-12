@@ -117,11 +117,12 @@ class Countries(Resource):
             COUNTRY_RESP: countries,
             NUM_RECS: num_recs,
         }
-
     @api.expect(api.model('CountryCreate', {
         'id': {'type': 'string', 'required': True, 'description': 'Country ID'},
-        'name': {'type': 'string', 'required': True, 'description': 'Country name'},
-        'capital': {'type': 'string', 'required': True, 'description': 'Capital city'},
+        'name': {'type': 'string', 'required': True, 'description'
+        :'Country name'},
+        'capital': {'type': 'string', 'required': True, 'description'
+        : 'Capital city'},
     }))
 
 @api.route(HELLO_EP)
