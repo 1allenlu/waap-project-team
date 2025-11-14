@@ -24,6 +24,8 @@ MIN_ID_LEN = 24
 MAX_ID_LEN = 24
 _OBJECTID_RE = re.compile(r'^[0-9a-fA-F]{24}$')
 
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
@@ -362,7 +364,10 @@ def connect_db():
                                                     + '?retryWrites=true&w=majority')
             else:
                 logger.debug('Using local Mongo configuration')
-                client_candidate = pm.MongoClient()
+                # for assignment Use MongoDB locally
+                client_candidate = pm.MongoClient(
+                    os.environ.get("MONGO_URI", "mongodb://localhost:27017"),
+                    serverSelectionTimeoutMS=2000)
 
             # Verify connection by requesting server info; this will raise
             # an exception if the server is unreachable.
@@ -388,17 +393,6 @@ def connect_db():
     logger.error('Could not connect to MongoDB after %d attempts', CONNECT_RETRIES)
     raise last_exc
 
-
-def needs_db(fn):                   
-    """Ensure we have a live Mongo client before any DB call.""" 
-    @wraps(fn)                      
-    def wrapper(*args, **kwargs):    
-        global client                
-        # If we don't have a client yet, connect               
-        if client is None:           
-            connect_db()            
-        return fn(*args, **kwargs)   
-    return wrapper                
 
 def convert_mongo_id(doc: dict):
     if MONGO_ID in doc:
