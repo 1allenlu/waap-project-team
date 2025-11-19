@@ -86,6 +86,13 @@ class Cities(Resource):
         return {'id': str(new_id)}, 201
 
 
+# reusable model for city create/update
+city_model = api.model('CityModel', {
+    'name': {'type': 'string', 'required': True, 'description': 'City name'},
+    'state_code': {'type': 'string', 'required': False, 'description': 'State code'},
+})
+
+
 @api.route(f'{STATES_EPS}/{READ}')
 class States(Resource):
     """
@@ -114,12 +121,7 @@ class CitiesRoot(Resource):
     Kept separate so clients can POST to /cities while the
     listing endpoint remains at /cities/read.
     """
-    @api.expect(api.model('CityCreate', {
-        'name': {
-        'type': 'string', 'required': True, 'description': 'City name'},
-        'state_code': {
-        'type': 'string', 'required': False, 'description': 'State code'},
-    }))
+    @api.expect(city_model)
 
     def post(self):
         """Create a new city record"""
@@ -129,6 +131,50 @@ class CitiesRoot(Resource):
         except ValueError as e:
             return {ERROR: str(e)}, 400
         return {'id': str(new_id)}, 201
+
+
+@api.route(f'{CITIES_EPS}/<string:city_id>')
+class CityItem(Resource):
+    """GET/PUT/DELETE operations for a single city by id."""
+    @api.doc(params={'city_id': 'City database id'})
+    def get(self, city_id):
+        try:
+            city = cqry.get_by_id(city_id)
+        except ValueError as e:
+            return {ERROR: str(e)}, 404
+        return city
+
+    @api.expect(city_model)
+    def put(self, city_id):
+        payload = api.payload
+        try:
+            ok = cqry.update_by_id(city_id, payload)
+        except ValueError as e:
+            return {ERROR: str(e)}, 400
+        if not ok:
+            return {ERROR: 'No changes made or city not found'}, 404
+        return {MESSAGE: 'Updated'}, 200
+
+    def delete(self, city_id):
+        try:
+            ok = cqry.delete_by_id(city_id)
+        except ValueError as e:
+            return {ERROR: str(e)}, 400
+        if not ok:
+            return {ERROR: 'City not found'}, 404
+        return {MESSAGE: 'Deleted'}, 200
+
+
+@api.route('/health')
+class Health(Resource):
+    def get(self):
+        try:
+            # lightweight DB ping
+            import data.db_connect as dbc
+            dbc.connect_db()
+        except Exception as e:
+            return {ERROR: str(e)}, 500
+        return {'status': 'ok'}
 
 
 @api.route(f'{COUNTRIES_EP}/read')

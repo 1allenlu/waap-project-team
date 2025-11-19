@@ -46,6 +46,38 @@ def create(flds: dict) -> str:
     return new_id
 
 
+def get_by_id(city_id: str) -> dict:
+    """Return a single city by its database id (string)."""
+    if not is_valid_id(city_id):
+        raise ValueError('Invalid id')
+    rec = dbc.read_one(CITY_COLLECTION, {dbc.MONGO_ID: city_id})
+    if rec is None:
+        raise ValueError('City not found')
+    return rec
+
+
+def update_by_id(city_id: str, update_fields: dict) -> bool:
+    """Update a city by id; returns True if modified_count > 0"""
+    if not is_valid_id(city_id):
+        raise ValueError('Invalid id')
+    if not isinstance(update_fields, dict):
+        raise ValueError('update_fields must be a dict')
+    res = dbc.update(CITY_COLLECTION, {dbc.MONGO_ID: city_id}, update_fields)
+    # pymongo UpdateResult has modified_count attribute
+    try:
+        return getattr(res, 'modified_count', 0) > 0
+    except Exception:
+        return False
+
+
+def delete_by_id(city_id: str) -> bool:
+    """Delete a city by id; returns True if deleted_count > 0"""
+    if not is_valid_id(city_id):
+        raise ValueError('Invalid id')
+    deleted = dbc.delete(CITY_COLLECTION, {dbc.MONGO_ID: city_id})
+    return deleted > 0
+
+
 def delete(name: str, state_code: str) -> bool:
     ret = dbc.delete(CITY_COLLECTION, {NAME: name, STATE_CODE: state_code})
     if ret < 1:
