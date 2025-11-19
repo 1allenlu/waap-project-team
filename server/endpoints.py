@@ -67,6 +67,13 @@ class Cities(Resource):
     app is working at all.
     """
     @api.expect(sort_parser)
+    @api.doc(
+        description=(
+            "Return a list of cities from the database. "
+            "Optionally sort by name or state_code using the 'sort' query"
+        )
+    )
+    @api.response(200, "Cities returned successfully")
     def get(self):
         """
         A trivial endpoint to see if the server is running.
@@ -82,9 +89,19 @@ class Cities(Resource):
             CITY_RESP: cities,
             NUM_RECS: num_recs,
         }
-
     @api.expect(city_create_model)
-
+    @api.expect(api.model('CityCreate', {
+    @api.doc(
+        description=(
+            "Create a new city record in the database. "
+            "The request body must include at least 'name'; "
+            "'state_code' is optional."
+        )
+    )
+        'name': {'type': 'string', 'required': True, 'description': 'City name'},
+        'state_code': {'type': 'string', 'required': False, 'description': 'State code'},
+    }))
+    @api.response(201, "City created successfully")
     def post(self):
         """Create a new city record"""
         payload = api.payload
