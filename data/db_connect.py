@@ -412,7 +412,7 @@ def create(collection: str, doc: dict, db: str = GEO_DB) -> str:
 
 
 @needs_db
-def read_one(collection, filt, db=GEO_DB):
+def read_one(collection: str, filt: dict, db: str = GEO_DB):
     """
     Find with a filter and return on the first doc found.
     Return None if not found.
@@ -420,6 +420,7 @@ def read_one(collection, filt, db=GEO_DB):
     for doc in client[db][collection].find(filt):
         convert_mongo_id(doc)
         return doc
+
 
 
 @needs_db
