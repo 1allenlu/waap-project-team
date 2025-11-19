@@ -12,6 +12,8 @@ from flask_cors import CORS
 
 import cities.queries as cqry
 import country.country as cntry
+import states.queries as sqry
+
 
 app = Flask(__name__)
 CORS(app)
@@ -30,6 +32,9 @@ HELLO_RESP = 'hello'
 
 CITIES_EPS = '/cities'
 CITY_RESP = 'Cities'
+
+STATES_EPS = '/state'
+STATE_RESP = 'States'
 
 COUNTRIES_EP = '/countries'
 COUNTRY_RESP = 'Countries'
@@ -79,6 +84,28 @@ class Cities(Resource):
         except ValueError as e:
             return {ERROR: str(e)}, 400
         return {'id': str(new_id)}, 201
+
+
+@api.route(f'{STATES_EPS}/{READ}')
+class States(Resource):
+    """
+    The purpose of the HelloWorld class is to have a simple test to see if the
+    app is working at all.
+    """
+    def get(self):
+        """
+        A trivial endpoint to see if the server is running.
+        """
+        try:
+            states = sqry.read()
+            num_recs = len(states)
+        except ConnectionError as e:
+            return {ERROR: str(e)}
+        return {
+            STATE_RESP: states,
+            NUM_RECS: num_recs,
+        }
+
 
 
 @api.route(CITIES_EPS)
