@@ -401,13 +401,14 @@ def convert_mongo_id(doc: dict):
 
 
 @needs_db
-def create(collection, doc, db=GEO_DB):
+def create(collection: str, doc: dict, db: str = GEO_DB) -> str:
     """
     Insert a single doc into collection.
     """
     print(f'{doc=}')
     ret = client[db][collection].insert_one(doc)
     return str(ret.inserted_id)
+
 
 
 @needs_db
