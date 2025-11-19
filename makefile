@@ -32,6 +32,7 @@ export PYTHONPATH := $(shell pwd)
 # ==============================================================================
 # Our directories - centralized location references
 CITIES_DIR = cities          # City-level data and queries module
+STATES_DIR = states          # State-level data and queries module
 DB_DIR = data                # Database and data storage
 REQ_DIR = .                  # Requirements files location (project root)
 SEC_DIR = security           # Security utilities and validation
@@ -62,7 +63,7 @@ help:
 	@echo "  make dev_env    - Install development dependencies"
 	@echo ""
 	@echo "Testing:"
-	@echo "  make all_tests  - Run all test suites (cities, security, server)"
+	@echo "  make all_tests  - Run all test suites (cities, states, security, server)"
 	@echo ""
 	@echo "Deployment:"
 	@echo "  make prod       - Run tests and push to GitHub (full pipeline)"
@@ -100,10 +101,11 @@ github: FORCE
 # Testing
 # ==============================================================================
 # all_tests: Run comprehensive test suite across all project modules
-# Executes tests in: cities, security, and server modules
+# Executes tests in: cities, states, security, and server modules
 # Each module's tests are defined in their respective makefiles
 all_tests: FORCE
 	cd $(CITIES_DIR); make tests
+	cd $(STATES_DIR); make tests
 	cd $(SEC_DIR); make tests
 	cd $(SERVER_DIR); make tests
 
