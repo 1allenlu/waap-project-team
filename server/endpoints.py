@@ -19,6 +19,18 @@ app = Flask(__name__)
 CORS(app)
 api = Api(app)
 
+# Reusable RESTX models (used by @api.expect for Swagger docs)
+city_create_model = api.model('CityCreate', {
+    'name': {'type': 'string', 'required': True, 'description': 'City name'},
+    'state_code': {'type': 'string', 'required': False, 'description': 'State code'},
+})
+
+country_create_model = api.model('CountryCreate', {
+    'id': {'type': 'string', 'required': True, 'description': 'Country ID'},
+    'name': {'type': 'string', 'required': True, 'description': 'Country name'},
+    'capital': {'type': 'string', 'required': True, 'description': 'Capital city'},
+})
+
 ERROR = 'Error'
 MESSAGE = 'Message'
 NUM_RECS = 'Number of Records'
@@ -71,10 +83,7 @@ class Cities(Resource):
             NUM_RECS: num_recs,
         }
 
-    @api.expect(api.model('CityCreate', {
-        'name': {'type': 'string', 'required': True, 'description': 'City name'},
-        'state_code': {'type': 'string', 'required': False, 'description': 'State code'},
-    }))
+    @api.expect(city_create_model)
 
     def post(self):
         """Create a new city record"""
@@ -193,14 +202,7 @@ class Countries(Resource):
             NUM_RECS: num_recs,
         }
 
-    @api.expect(api.model('CountryCreate', {
-        'id': {
-        'type': 'string', 'required': True, 'description': 'Country ID'},
-        'name': {
-        'type': 'string', 'required': True, 'description': 'Country name'},
-        'capital': {
-        'type': 'string', 'required': True, 'description': 'Capital city'},
-    }))
+    @api.expect(country_create_model)
 
     def post(self):
         """Add a new country to the in-memory cache."""
