@@ -90,7 +90,6 @@ class Cities(Resource):
             NUM_RECS: num_recs,
         }
     @api.expect(city_create_model)
-    @api.expect(api.model('CityCreate', {
     @api.doc(
         description=(
             "Create a new city record in the database. "
@@ -98,9 +97,6 @@ class Cities(Resource):
             "'state_code' is optional."
         )
     )
-        'name': {'type': 'string', 'required': True, 'description': 'City name'},
-        'state_code': {'type': 'string', 'required': False, 'description': 'State code'},
-    }))
     @api.response(201, "City created successfully")
     def post(self):
         """Create a new city record"""
@@ -125,6 +121,11 @@ class States(Resource):
     The purpose of the HelloWorld class is to have a simple test to see if the
     app is working at all.
     """
+    @api.doc(
+        description="Return a list of all states from the backing store."
+    )
+    @api.response(200, "States returned successfully")
+    @api.response(500, "Backend error while reading states")
     def get(self):
         """
         A trivial endpoint to see if the server is running.
@@ -138,7 +139,6 @@ class States(Resource):
             STATE_RESP: states,
             NUM_RECS: num_recs,
         }
-
 
 
 @api.route(CITIES_EPS)
@@ -205,6 +205,11 @@ class Health(Resource):
 
 @api.route(f'{COUNTRIES_EP}/read')
 class Countries(Resource):
+    @api.doc(
+        description="Return all countries from the in-memory country cache."
+    )
+    @api.response(200, "Countries returned successfully")
+    @api.response(500, "Backend error while reading countries")    
     def get(self):
         """
         Return all countries
