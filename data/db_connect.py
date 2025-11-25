@@ -7,6 +7,7 @@ import time
 import re
 import logging
 from functools import wraps
+import certifi
 
 import pymongo as pm
 from contextlib import contextmanager
@@ -26,8 +27,17 @@ _OBJECTID_RE = re.compile(r'^[0-9a-fA-F]{24}$')
 
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 
+
+user_nm = os.getenv('MONGO_USER_NM', 'datamixmaster')
+cloud_svc = os.getenv('MONGO_HOST', 'datamixmaster.26rvk.mongodb.net')
+passwd = os.environ.get("MONGO_PASSWD", '')
+cloud_mdb = "mongodb+srv"
+db_params = "retryWrites=false&w=majority"
+
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
+
 
 # Retry configuration for connecting to MongoDB. Can be tuned via env vars.
 CONNECT_RETRIES = int(os.environ.get('DB_CONNECT_RETRIES', '3'))
@@ -360,63 +370,74 @@ def needs_db(fn):
 def connect_db():
     """
     This provides a uniform way to connect to the DB across all uses.
-    Returns a mongo client object... maybe we shouldn't?
-    Also set global client variable.
-    We should probably either return a client OR set a
-    client global.
+    Returns a mongo client object.
     """
     global client
     if client is not None:
         return client
-
+    
     last_exc = None
     for attempt in range(1, CONNECT_RETRIES + 1):
         try:
             logger.info(
-                'Connecting to MongoDB (attempt %d/%d)',
+                'Connecting to MongoDB (attempt %d/%d)', 
                 attempt, CONNECT_RETRIES)
+            
             if os.environ.get('CLOUD_MONGO', LOCAL) == CLOUD:
                 password = os.environ.get('MONGO_PASSWD')
                 if not password:
                     raise ValueError(
                         'You must set your password to use Mongo in the cloud.'
                     )
+                
                 logger.debug('Using cloud Mongo configuration')
+                
+                # Using the new cloud connection format with certifi
+                cloud_mdb = 'mongodb+srv'
+                user_nm = 'gcallah'
+                cloud_svc = 'koukoumongo1.yud9b.mongodb.net'
+                db_params = 'retryWrites=true&w=majority'
+                
                 client_candidate = pm.MongoClient(
-                    f'mongodb+srv://gcallah:{password}'
-                    + '@koukoumongo1.yud9b.mongodb.net/'
-                    + '?retryWrites=true&w=majority')
+                    f'{cloud_mdb}://{user_nm}:{password}'
+                    + f'@{cloud_svc}/geo2025DB'
+                    + f'?{db_params}',
+                    tlsCAFile=certifi.where()
+                )
             else:
                 logger.debug('Using local Mongo configuration')
-                # for assignment Use MongoDB locally
                 client_candidate = pm.MongoClient(
                     os.environ.get("MONGO_URI", "mongodb://localhost:27017"),
-                    serverSelectionTimeoutMS=2000)
-
-            # Verify connection by requesting server info; this will raise
-            # an exception if the server is unreachable.
+                    serverSelectionTimeoutMS=2000
+                )
+            
+            # Verify connection
             client_candidate.server_info()
-
+            
             # Success: set global and return
             client = client_candidate
             logger.info('Connected to MongoDB successfully')
             return client
+            
         except Exception as e:
             logger.warning(
-                'MongoDB connection attempt %d failed: %s', attempt, e)
+                'MongoDB connection attempt %d failed: %s', 
+                attempt, e)
             last_exc = e
+            
             try:
-                # Close candidate if it was created
                 if 'client_candidate' in locals():
                     client_candidate.close()
             except Exception:
                 pass
+            
             if attempt < CONNECT_RETRIES:
                 time.sleep(RETRY_DELAY_SECONDS)
-
+    
     # If we exit the loop without returning, raise the last exception
     logger.error(
-        'Could not connect to MongoDB after %d attempts', CONNECT_RETRIES
+        'Could not connect to MongoDB after %d attempts', 
+        CONNECT_RETRIES
     )
     raise last_exc
 
