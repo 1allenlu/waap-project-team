@@ -400,7 +400,7 @@ def connect_db():
                 
                 client_candidate = pm.MongoClient(
                     f'{cloud_mdb}://{user_nm}:{password}'
-                    + f'@{cloud_svc}/geo2025DB'
+                    + f'@{cloud_svc}/{GEO_DB}'
                     + f'?{db_params}',
                     tlsCAFile=certifi.where()
                 )
