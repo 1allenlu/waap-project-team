@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from unittest.mock import patch
+# from unittest.mock import patch
 import pytest
 
 import cities.queries as qry
@@ -59,7 +59,8 @@ def test_create_bad_param_type():
 
 
 def test_delete(temp_city_no_del):
-    ret = qry.delete(temp_city_no_del[qry.NAME], temp_city_no_del[qry.STATE_CODE])
+    ret = qry.delete(
+        temp_city_no_del[qry.NAME], temp_city_no_del[qry.STATE_CODE])
     assert ret == 1
 
 

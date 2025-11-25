@@ -47,25 +47,27 @@ def measure_performance(fn):
     def wrapper(*args, **kwargs):
         start_time = time.time()
         start_memory = None
-        
+
         try:
             import psutil
             process = psutil.Process(os.getpid())
             start_memory = process.memory_info().rss / 1024 / 1024  # MB
         except ImportError:
             pass
-        
+
         result = fn(*args, **kwargs)
-        
+
         elapsed = time.time() - start_time
         logger.info(f'{fn.__name__} took {elapsed:.3f}s')
-        
+
         if start_memory:
             end_memory = process.memory_info().rss / 1024 / 1024
-            logger.info(f'{fn.__name__} memory delta: {end_memory - start_memory:.2f}MB')
-        
+            logger.info(
+                f'{fn.__name__} memory delta:'
+                f' {end_memory - start_memory:.2f}MB')
+
         return result
-    
+
     return wrapper
 
 
@@ -76,28 +78,31 @@ def retry_on_failure(max_retries=3, delay=1, backoff=2):
         def wrapper(*args, **kwargs):
             current_delay = delay
             last_exception = None
-            
+
             for attempt in range(1, max_retries + 1):
                 try:
                     return fn(*args, **kwargs)
-                except (pm.errors.AutoReconnect, 
+                except (pm.errors.AutoReconnect,
                         pm.errors.NetworkTimeout,
                         pm.errors.ServerSelectionTimeoutError) as e:
                     last_exception = e
                     logger.warning(
-                        f'Attempt {attempt}/{max_retries} failed for {fn.__name__}: {e}'
+                        f'Attempt {attempt}/{max_retries} failed '
+                        f'for {fn.__name__}: {e}'
                     )
-                    
+
                     if attempt < max_retries:
                         logger.info(f'Retrying in {current_delay}s...')
                         time.sleep(current_delay)
                         current_delay *= backoff
                     else:
-                        logger.error(f'All {max_retries} attempts failed for {fn.__name__}')
+                        logger.error(
+                            f'All {max_retries} attempts failed for '
+                            f'{fn.__name__}')
                         raise last_exception
-            
+
             raise last_exception
-        
+
         return wrapper
     return decorator
 
@@ -107,50 +112,52 @@ def validate_inputs(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         collection = kwargs.get('collection') or (args[0] if args else None)
-        
+
         if collection and not isinstance(collection, str):
-            raise ValueError(f'Collection name must be a string, got {type(collection)}')
-        
+            raise ValueError(
+                f'Collection name must be a string, got {type(collection)}')
+
         if collection and not collection.strip():
             raise ValueError('Collection name cannot be empty')
-        
+
         # Validate document if present
         doc = kwargs.get('doc') or (args[1] if len(args) > 1 else None)
         if doc is not None and not isinstance(doc, dict):
             raise ValueError(f'Document must be a dictionary, got {type(doc)}')
-        
+
         return fn(*args, **kwargs)
-    
+
     return wrapper
 
 
 def cache_results(ttl_seconds=60):
     """Cache database read results for a specified time."""
     cache = {}
-    
+
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             # Create a cache key from function name and arguments
-            cache_key = f"{fn.__name__}:{str(args)}:{str(sorted(kwargs.items()))}"
+            cache_key = (f"{fn.__name__}:{str(args)}:"
+                         f"{str(sorted(kwargs.items()))}")
             current_time = time.time()
-            
+
             # Check if we have a cached result that's still valid
             if cache_key in cache:
                 result, timestamp = cache[cache_key]
                 if current_time - timestamp < ttl_seconds:
                     logger.debug(f'Cache hit for {fn.__name__}')
                     return result
-            
+
             # Call the function and cache the result
             result = fn(*args, **kwargs)
             cache[cache_key] = (result, current_time)
-            
+
             return result
-        
+
         # Add a method to clear cache
         wrapper.clear_cache = lambda: cache.clear()
-        
+
         return wrapper
     return decorator
 
@@ -163,7 +170,7 @@ def handle_mongo_errors(fn):
             return fn(*args, **kwargs)
         except pm.errors.DuplicateKeyError as e:
             logger.error(f'Duplicate key error in {fn.__name__}: {e}')
-            raise ValueError(f'Duplicate entry detected')
+            raise ValueError(f'Duplicate entry detected: {str(e)}')
         except pm.errors.InvalidDocument as e:
             logger.error(f'Invalid document in {fn.__name__}: {e}')
             raise ValueError(f'Invalid document format: {str(e)}')
@@ -173,7 +180,7 @@ def handle_mongo_errors(fn):
         except pm.errors.OperationFailure as e:
             logger.error(f'Operation failure in {fn.__name__}: {e}')
             raise RuntimeError(f'Database operation failed: {str(e)}')
-    
+
     return wrapper
 
 
@@ -184,12 +191,14 @@ def require_nonempty_filter(fn):
         filt = kwargs.get('filt') or kwargs.get('filters')
         if not filt:
             filt = args[1] if len(args) > 1 else None
-        
+
         if not filt:
-            logger.warning(f'{fn.__name__} called with empty filter - this affects all documents!')
-        
+            logger.warning(
+                f'{fn.__name__} called with empty filter - '
+                'this affects all documents!')
+
         return fn(*args, **kwargs)
-    
+
     return wrapper
 
 
@@ -197,22 +206,32 @@ def log_detailed_operation(fn):
     """Log database operations with detailed information."""
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        collection = kwargs.get('collection') or (args[0] if args else 'unknown')
+        collection = (
+            kwargs.get('collection')
+            or (args[0] if args else 'unknown')
+        )
         db = kwargs.get('db', GEO_DB)
-        
-        logger.info(f'DB Operation: {fn.__name__} | Collection: {collection} | DB: {db}')
-        
+
+        logger.info(
+            f'DB Operation: {fn.__name__} |'
+            f'Collection: {collection} | DB: {db}'
+        )
+
         start_time = time.time()
         try:
             result = fn(*args, **kwargs)
             elapsed = time.time() - start_time
-            logger.info(f'Success: {fn.__name__} completed in {elapsed:.3f}s')
+            logger.info(
+                f'Success: {fn.__name__} completed in {elapsed:.3f}s'
+            )
             return result
         except Exception as e:
             elapsed = time.time() - start_time
-            logger.error(f'Failed: {fn.__name__} after {elapsed:.3f}s - {str(e)}')
+            logger.error(
+                f'Failed: {fn.__name__} after {elapsed:.3f}s - {str(e)}'
+            )
             raise
-    
+
     return wrapper
 
 
@@ -220,13 +239,13 @@ def rate_limit(calls_per_second=10):
     """Rate limit database operations to prevent overload."""
     last_called = {}
     min_interval = 1.0 / calls_per_second
-    
+
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             now = time.time()
             fn_name = fn.__name__
-            
+
             if fn_name in last_called:
                 elapsed = now - last_called[fn_name]
                 if elapsed < min_interval:
@@ -418,7 +437,6 @@ def create(collection: str, doc: dict, db: str = GEO_DB) -> str:
     return str(ret.inserted_id)
 
 
-
 @needs_db
 def read_one(collection: str, filt: dict, db: str = GEO_DB):
     """
@@ -428,7 +446,6 @@ def read_one(collection: str, filt: dict, db: str = GEO_DB):
     for doc in client[db][collection].find(filt):
         convert_mongo_id(doc)
         return doc
-
 
 
 @needs_db

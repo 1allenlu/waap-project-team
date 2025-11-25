@@ -17,7 +17,8 @@ def test_connect_and_basic_ops():
     """
     from data import db_connect as dbc
 
-    # Try to get a client and list collections (no assertions beyond no-exception)
+    # Try to get a client and list collections
+    # (no assertions beyond no-exception)
     client = dbc.connect_db()
     assert client is not None
 
