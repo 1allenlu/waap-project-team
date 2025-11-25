@@ -22,13 +22,18 @@ api = Api(app)
 # Reusable RESTX models (used by @api.expect for Swagger docs)
 city_create_model = api.model('CityCreate', {
     'name': {'type': 'string', 'required': True, 'description': 'City name'},
-    'state_code': {'type': 'string', 'required': False, 'description': 'State code'},
+    'state_code': {
+        'type': 'string', 'required': False, 'description': 'State code'
+    },
 })
 
 country_create_model = api.model('CountryCreate', {
     'id': {'type': 'string', 'required': True, 'description': 'Country ID'},
-    'name': {'type': 'string', 'required': True, 'description': 'Country name'},
-    'capital': {'type': 'string', 'required': True, 'description': 'Capital city'},
+    'name': {
+        'type': 'string', 'required': True, 'description': 'Country name'},
+    'capital': {
+        'type': 'string', 'required': True, 'description': 'Capital city'
+    },
 })
 
 ERROR = 'Error'
@@ -89,6 +94,7 @@ class Cities(Resource):
             CITY_RESP: cities,
             NUM_RECS: num_recs,
         }
+
     @api.expect(city_create_model)
     @api.doc(
         description=(
@@ -111,7 +117,8 @@ class Cities(Resource):
 # reusable model for city create/update
 city_model = api.model('CityModel', {
     'name': {'type': 'string', 'required': True, 'description': 'City name'},
-    'state_code': {'type': 'string', 'required': False, 'description': 'State code'},
+    'state_code': {
+        'type': 'string', 'required': False, 'description': 'State code'},
 })
 
 
@@ -148,7 +155,6 @@ class CitiesRoot(Resource):
     listing endpoint remains at /cities/read.
     """
     @api.expect(city_model)
-
     def post(self):
         """Create a new city record"""
         payload = api.payload
@@ -209,7 +215,7 @@ class Countries(Resource):
         description="Return all countries from the in-memory country cache."
     )
     @api.response(200, "Countries returned successfully")
-    @api.response(500, "Backend error while reading countries")    
+    @api.response(500, "Backend error while reading countries")
     def get(self):
         """
         Return all countries
@@ -225,7 +231,6 @@ class Countries(Resource):
         }
 
     @api.expect(country_create_model)
-
     def post(self):
         """Add a new country to the in-memory cache."""
         payload = api.payload

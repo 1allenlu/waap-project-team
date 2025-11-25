@@ -231,12 +231,12 @@ def rate_limit(calls_per_second=10):
                 elapsed = now - last_called[fn_name]
                 if elapsed < min_interval:
                     sleep_time = min_interval - elapsed
-                    logger.debug(f'Rate limiting {fn_name}, sleeping {sleep_time:.3f}s')
+                    logger.debug(
+                        f'Rate limiting {fn_name}, sleeping {sleep_time:.3f}s')
                     time.sleep(sleep_time)
-            
+
             last_called[fn_name] = time.time()
             return fn(*args, **kwargs)
-        
         return wrapper
     return decorator
 
@@ -246,13 +246,13 @@ def convert_empty_to_none(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         result = fn(*args, **kwargs)
-        
+
         if result is not None:
             if isinstance(result, (list, dict)) and len(result) == 0:
                 return None
-        
+
         return result
-    
+
     return wrapper
 
 
@@ -261,20 +261,20 @@ def ensure_connection_health(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         global client
-        
+
         if client is None:
-            logger.warning(f'{fn.__name__} called with no client, connecting...')
+            logger.warning(
+                f'{fn.__name__} called with no client, connecting...')
             connect_db()
-        
+
         try:
             # Quick health check
             client.admin.command('ping')
         except Exception as e:
             logger.error(f'Connection health check failed: {e}')
             connect_db()
-        
         return fn(*args, **kwargs)
-    
+
     return wrapper
 
 
@@ -303,11 +303,12 @@ def audit_operation(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         operation = fn.__name__
-        collection = kwargs.get('collection') or (args[0] if args else 'unknown')
+        collection = kwargs.get(
+            'collection') or (args[0] if args else 'unknown')
         timestamp = time.time()
-        
+
         logger.info(f'AUDIT: {operation} on {collection} at {timestamp}')
-        
+
         try:
             result = fn(*args, **kwargs)
             logger.info(f'AUDIT: {operation} completed successfully')
@@ -315,15 +316,15 @@ def audit_operation(fn):
         except Exception as e:
             logger.error(f'AUDIT: {operation} failed - {str(e)}')
             raise
-    
     return wrapper
 
 
-def needs_db(fn):                       
+def needs_db(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         """Ensure a live MongoDB client exists before calling fn.
-        If the client is not set, or if the server is unreachable (server_info raises), try to (re)connect. """
+        If the client is not set, or if the server is unreachable
+        (server_info raises), try to (re)connect. """
         global client
         try:
             if client is None:
@@ -335,7 +336,6 @@ def needs_db(fn):
             connect_db()
         return fn(*args, **kwargs)
     return wrapper
-
 
 
 def connect_db():
@@ -353,15 +353,20 @@ def connect_db():
     last_exc = None
     for attempt in range(1, CONNECT_RETRIES + 1):
         try:
-            logger.info('Connecting to MongoDB (attempt %d/%d)', attempt, CONNECT_RETRIES)
+            logger.info(
+                'Connecting to MongoDB (attempt %d/%d)',
+                attempt, CONNECT_RETRIES)
             if os.environ.get('CLOUD_MONGO', LOCAL) == CLOUD:
                 password = os.environ.get('MONGO_PASSWD')
                 if not password:
-                    raise ValueError('You must set your password to use Mongo in the cloud.')
+                    raise ValueError(
+                        'You must set your password to use Mongo in the cloud.'
+                    )
                 logger.debug('Using cloud Mongo configuration')
-                client_candidate = pm.MongoClient(f'mongodb+srv://gcallah:{password}'
-                                                    + '@koukoumongo1.yud9b.mongodb.net/'
-                                                    + '?retryWrites=true&w=majority')
+                client_candidate = pm.MongoClient(
+                    f'mongodb+srv://gcallah:{password}'
+                    + '@koukoumongo1.yud9b.mongodb.net/'
+                    + '?retryWrites=true&w=majority')
             else:
                 logger.debug('Using local Mongo configuration')
                 # for assignment Use MongoDB locally
@@ -378,7 +383,8 @@ def connect_db():
             logger.info('Connected to MongoDB successfully')
             return client
         except Exception as e:
-            logger.warning('MongoDB connection attempt %d failed: %s', attempt, e)
+            logger.warning(
+                'MongoDB connection attempt %d failed: %s', attempt, e)
             last_exc = e
             try:
                 # Close candidate if it was created
@@ -390,7 +396,9 @@ def connect_db():
                 time.sleep(RETRY_DELAY_SECONDS)
 
     # If we exit the loop without returning, raise the last exception
-    logger.error('Could not connect to MongoDB after %d attempts', CONNECT_RETRIES)
+    logger.error(
+        'Could not connect to MongoDB after %d attempts', CONNECT_RETRIES
+    )
     raise last_exc
 
 

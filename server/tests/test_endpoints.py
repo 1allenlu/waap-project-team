@@ -26,7 +26,8 @@ def test_post_city_bad_payload(client):
 
 
 def test_get_city_item(client, monkeypatch):
-    monkeypatch.setattr('cities.queries.get_by_id', lambda cid: {'name': 'X', 'state_code': 'Y'})
+    monkeypatch.setattr('cities.queries.get_by_id', lambda cid: {
+        'name': 'X', 'state_code': 'Y'})
     r = client.get('/cities/507f1f77bcf86cd799439011')
     assert r.status_code == 200
     data = r.get_json()
@@ -34,8 +35,11 @@ def test_get_city_item(client, monkeypatch):
 
 
 def test_put_city_item(client, monkeypatch):
-    monkeypatch.setattr('cities.queries.update_by_id', lambda cid, payload: True)
-    r = client.put('/cities/507f1f77bcf86cd799439011', json={'name': 'NewName'})
+    monkeypatch.setattr(
+        'cities.queries.update_by_id', lambda cid, payload: True)
+    r = client.put(
+        '/cities/507f1f77bcf86cd799439011', json={'name': 'NewName'}
+    )
     assert r.status_code == 200
     data = r.get_json()
     assert data.get('Message') == 'Updated'
@@ -50,7 +54,9 @@ def test_delete_city_item(client, monkeypatch):
 
 
 def test_get_cities_read(client, monkeypatch):
-    monkeypatch.setattr('cities.queries.read_sorted', lambda sort=None: [{'name': 'A'}])
+    monkeypatch.setattr(
+        'cities.queries.read_sorted', lambda sort=None: [{'name': 'A'}]
+    )
     r = client.get('/cities/read')
     assert r.status_code == 200
     data = r.get_json()
