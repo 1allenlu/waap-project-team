@@ -399,9 +399,9 @@ def connect_db():
 
                 # Using the new cloud connection format with certifi
                 cloud_mdb = 'mongodb+srv'
-                user_nm = 'gcallah'
-                cloud_svc = 'koukoumongo1.yud9b.mongodb.net'
-                db_params = 'retryWrites=true&w=majority'
+                user_nm = 'ss15580_db_user'
+                cloud_svc = 'geo2025-cluster.jooae0o.mongodb.net'
+                db_params = 'appName=geo2025-cluster'
                 client_candidate = pm.MongoClient(
                     f'mongodb+srv://ss15580_db_user:{password}'
                     + '@geo2025-cluster.jooae0o.mongodb.net/'
