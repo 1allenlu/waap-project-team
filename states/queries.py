@@ -3,25 +3,76 @@
 This file deals with our state-level data.
 """
 import data.db_connect as dbc
+from data.db_connect import is_valid_id 
+from functools import wraps
 MIN_ID_LEN = 1
 
 STATE_COLLECTION = 'states'
 
 ID = 'id'
 NAME = 'name'
-STATE_CODE = 'state_code'
-POPULATION = 'population'
+CODE = 'code'
+COUNTRY_CODE = 'country_code'
 
+SAMPLE_CODE = 'NY'
+SAMPLE_COUNTRY = 'USA'
+SAMPLE_KEY = (SAMPLE_CODE, SAMPLE_COUNTRY)
 SAMPLE_STATE = {
     NAME: 'New York',
-    STATE_CODE: 'NY',
-    POPULATION: 19500000,
+    CODE: SAMPLE_CODE,
+    COUNTRY_CODE: SAMPLE_COUNTRY,
 }
 
-# Placeholder for potential in-memory caching (currently unused)
-state_cache = {}
+cache = None
 
-SORTABLE_FIELDS = {NAME, STATE_CODE, POPULATION}
+
+def needs_cache(fn, *args, **kwargs):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not cache:
+            load_cache()
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+@needs_cache
+def count() -> int:
+    return len(cache)
+
+
+@needs_cache
+def create(flds: dict, reload=True) -> str:
+    if not isinstance(flds, dict):
+        raise ValueError(f'Bad type for {type(flds)=}')
+    code = flds.get(CODE)
+    country_code = flds.get(COUNTRY_CODE)
+    if not flds.get(NAME):
+        raise ValueError(f'Bad value for {flds.get(NAME)=}')
+    if not code:
+        raise ValueError(f'Bad value for {code=}')
+    if not country_code:
+        raise ValueError(f'Bad value for {country_code=}')
+    if (code, country_code) in cache:
+        raise ValueError(f'Duplicate key: {code=}; {country_code=}')
+    new_id = dbc.create(STATE_COLLECTION, flds)
+    print(f'{new_id=}')
+    if reload:
+        load_cache()
+    return new_id
+
+
+@needs_cache
+def read() -> dict:
+    return cache
+
+
+def load_cache():
+    global cache
+    cache = {}
+    states = dbc.read(STATE_COLLECTION)
+    for state in states:
+        cache[(state[CODE], state[COUNTRY_CODE])] = state
+
 
 
 def is_valid_id(_id: str) -> bool:
@@ -48,10 +99,12 @@ def create(flds: dict) -> str:
     return new_id
 
 
-def delete(name: str, state_code: str) -> bool:
-    ret = dbc.delete(STATE_COLLECTION, {NAME: name, STATE_CODE: state_code})
+
+def delete(code: str, cntry_code: str) -> bool:
+    ret = dbc.delete(STATE_COLLECTION, {CODE: code, COUNTRY_CODE: cntry_code})
     if ret < 1:
-        raise ValueError(f'State not found: {name}, {state_code}')
+        raise ValueError(f'State not found: {code}, {cntry_code}')
+    load_cache()
     return ret
 
 
