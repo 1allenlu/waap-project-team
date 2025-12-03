@@ -7,7 +7,7 @@ import time
 import re
 import logging
 from functools import wraps
-import certifi
+# import certifi
 
 import pymongo as pm
 from contextlib import contextmanager

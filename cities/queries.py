@@ -36,6 +36,9 @@ def num_cities() -> int:
 
 
 def create(flds: dict) -> str:
+    """ Insert a new city document.
+        Expects a dict with at least the 'name' field.
+        Returns the string id of the newly created document."""
     print(f'{flds=}')
     if not isinstance(flds, dict):
         raise ValueError(f'Bad type for {type(flds)=}')

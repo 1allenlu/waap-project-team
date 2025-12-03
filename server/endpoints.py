@@ -68,8 +68,7 @@ sort_parser.add_argument(
 @api.route(f'{CITIES_EPS}/{READ}')
 class Cities(Resource):
     """
-    The purpose of the HelloWorld class is to have a simple test to see if the
-    app is working at all.
+    Endpoints for listing and creating city records in the database.
     """
     @api.expect(sort_parser)
     @api.doc(
@@ -81,7 +80,7 @@ class Cities(Resource):
     @api.response(200, "Cities returned successfully")
     def get(self):
         """
-        A trivial endpoint to see if the server is running.
+        Returns all cities.
         """
         try:
             args = sort_parser.parse_args()
@@ -125,8 +124,7 @@ city_model = api.model('CityModel', {
 @api.route(f'{STATES_EPS}/{READ}')
 class States(Resource):
     """
-    The purpose of the HelloWorld class is to have a simple test to see if the
-    app is working at all.
+    Endpoints for listing and creating states records in the database.
     """
     @api.doc(
         description="Return a list of all states from the backing store."
@@ -135,7 +133,7 @@ class States(Resource):
     @api.response(500, "Backend error while reading states")
     def get(self):
         """
-        A trivial endpoint to see if the server is running.
+        Returns all states.
         """
         try:
             states = sqry.read()
