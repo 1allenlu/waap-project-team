@@ -6,10 +6,10 @@
 #
 # Prerequisites:
 #   - sshpass must be installed (brew install sshpass on macOS)
-#   - DEMO_PA_PWD environment variable must be set with PythonAnywhere password
+#   - GEODATA2025_PA_PWD environment variable must be set with PythonAnywhere password
 #
 # Usage:
-#   export DEMO_PA_PWD="your-password-here"
+#   export GEODATA2025_PA_PWD="your-password-here"
 #   ./deploy.sh
 #
 # What this script does:
@@ -39,8 +39,8 @@ echo "PA user = $PA_USER"
 # Validate required environment variable
 if [ -z "$GEODATA2025_PA_PWD" ]
 then
-    echo "ERROR: The PythonAnywhere password var (DEMO_PA_PWD) must be set in the env."
-    echo "Usage: export DEMO_PA_PWD='your-password' && ./deploy.sh"
+    echo "ERROR: The PythonAnywhere password var (GEODATA2025_PA_PWD) must be set in the env."
+    echo "Usage: export GEODATA2025_PA_PWD='your-password' && ./deploy.sh"
     exit 1
 fi
 
