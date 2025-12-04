@@ -20,10 +20,12 @@
 # ==============================================================================
 
 # PythonAnywhere Configuration
-PROJ_DIR=demo-repo4                          # Project directory on remote server
-VENV=Fall2023                                 # Python virtual environment name
-PA_DOMAIN="Fall2023.pythonanywhere.com"      # PythonAnywhere domain
-PA_USER='Fall2023'                            # PythonAnywhere username
+PROJ_NAME=geodata2025
+
+PROJ_DIR=$PROJ_NAME
+VENV=$PROJ_NAME
+PA_DOMAIN="$PROJ_NAME.pythonanywhere.com"
+PA_USER=$PROJ_NAME
 
 # Display deployment configuration
 echo "===================================================================="
@@ -35,14 +37,14 @@ echo "Virtual env = $VENV"
 echo "PA user = $PA_USER"
 
 # Validate required environment variable
-if [ -z "$DEMO_PA_PWD" ]
+if [ -z "$GEODATA2025_PA_PWD" ]
 then
     echo "ERROR: The PythonAnywhere password var (DEMO_PA_PWD) must be set in the env."
     echo "Usage: export DEMO_PA_PWD='your-password' && ./deploy.sh"
     exit 1
 fi
 
-echo "PA password = [HIDDEN FOR SECURITY]"
+echo "PA password = $GEODATA2025_PA_PWD"
 echo "===================================================================="
 
 # SSH into PythonAnywhere and execute rebuild script
@@ -50,7 +52,8 @@ echo "===================================================================="
 # - StrictHostKeyChecking no: Automatically accept SSH host key
 # - EOF heredoc: Commands to execute on remote server
 echo "SSHing to PythonAnywhere..."
-sshpass -p $DEMO_PA_PWD ssh -o "StrictHostKeyChecking no" $PA_USER@ssh.pythonanywhere.com << EOF
+# sshpass -p $GEODATA2025_PA_PWD ssh -o "StrictHostKeyChecking no" $PA_USER@ssh.pythonanywhere.com
+sshpass -p $GEODATA2025_PA_PWD ssh -o "StrictHostKeyChecking no" $PA_USER@ssh.pythonanywhere.com << EOF
     cd ~/$PROJ_DIR; PA_USER=$PA_USER PROJ_DIR=~/$PROJ_DIR VENV=$VENV PA_DOMAIN=$PA_DOMAIN ./rebuild.sh
 EOF
 
