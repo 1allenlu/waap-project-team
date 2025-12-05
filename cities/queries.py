@@ -17,9 +17,15 @@ SAMPLE_CITY = {
 }
 
 # Placeholder for potential in-memory caching (currently unused)
-city_cache = {}
+city_cache = None
 
 SORTABLE_FIELDS = {NAME, STATE_CODE}
+
+
+def _load_city_cache():
+    """ load all ciites from data base to cache"""
+    global city_cache
+    city_cache = dbc.read(CITY_COLLECTION)
 
 
 def is_valid_id(_id: str) -> bool:
@@ -46,6 +52,7 @@ def create(flds: dict) -> str:
         raise ValueError(f'Bad value for {flds.get(NAME)=}')
     new_id = dbc.create(CITY_COLLECTION, flds)
     print(f'{new_id=}')
+    _load_city_cache()     # refresh cache after insert
     return new_id
 
 
@@ -78,6 +85,8 @@ def delete_by_id(city_id: str) -> bool:
     if not is_valid_id(city_id):
         raise ValueError('Invalid id')
     deleted = dbc.delete(CITY_COLLECTION, {dbc.MONGO_ID: city_id})
+    if deleted > 0:
+        _load_city_cache()   # refresh cache
     return deleted > 0
 
 
@@ -85,6 +94,7 @@ def delete(name: str, state_code: str) -> bool:
     ret = dbc.delete(CITY_COLLECTION, {NAME: name, STATE_CODE: state_code})
     if ret < 1:
         raise ValueError(f'City not found: {name}, {state_code}')
+    _load_city_cache()
     return ret
 
 
@@ -105,7 +115,11 @@ def read_sorted(sort=None):
 
 
 def read() -> dict:
-    return dbc.read(CITY_COLLECTION)
+    """Return all cities using in-memory cache when available"""
+    global city_cache
+    if city_cache is None:
+        _load_city_cache()
+    return city_cache
 
 
 def main():
