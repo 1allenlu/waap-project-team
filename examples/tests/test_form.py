@@ -5,8 +5,11 @@ import examples.form as fm
 
 
 def test_get_form():
+    # Call the function to retrieve a form structure
     form = fm.get_form()
+    # Ensure the returned object is a list
     assert isinstance(form, list)
+    
     assert len(form) > 0
     for fld in form:
         # Every field must have a name!
