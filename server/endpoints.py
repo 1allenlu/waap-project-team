@@ -5,7 +5,7 @@ The endpoint called `endpoints` will return all available endpoints.
 # from http import HTTPStatus
 
 from flask import Flask  # , request
-from flask_restx import Resource, Api  # Namespace
+from flask_restx import Resource, Api, fields  # Namespace
 from flask_cors import CORS
 
 # import werkzeug.exceptions as wz
@@ -21,26 +21,20 @@ api = Api(app)
 
 # Reusable RESTX models (used by @api.expect for Swagger docs)
 city_create_model = api.model('CityCreate', {
-    'name': {'type': 'string', 'required': True, 'description': 'City name'},
-    'state_code': {
-        'type': 'string', 'required': False, 'description': 'State code'
-    },
+    'name': fields.String(required=True, description='City name'),
+    'state_code': fields.String(required=False, description='State code'),
 })
 
 country_create_model = api.model('CountryCreate', {
-    'id': {'type': 'string', 'required': True, 'description': 'Country ID'},
-    'name': {
-        'type': 'string', 'required': True, 'description': 'Country name'},
-    'capital': {
-        'type': 'string', 'required': True, 'description': 'Capital city'
-    },
+    'id': fields.String(required=True, description='Country ID'),
+    'name': fields.String(required=True, description='Country name'),
+    'capital': fields.String(required=True, description='Capital city'),
 })
 
 state_model = api.model('State', {
-    'name': {'type': 'string', 'required': True, 'description': 'State name'},
-    'code': {'type': 'string', 'required': True, 'description': 'State code'},
-    'country_code': {
-        'type': 'string', 'required': True, 'description': 'Country code'},
+    'name': fields.String(required=True, description='State name'),
+    'code': fields.String(required=True, description='State code'),
+    'country_code': fields.String(required=True, description='Country code'),
 })
 
 ERROR = 'Error'
@@ -86,6 +80,7 @@ class Cities(Resource):
         )
     )
     @api.response(200, "Cities returned successfully")
+    @api.response(400, "Invalid sort field")
     def get(self):
         """
         Returns all cities.
@@ -95,6 +90,8 @@ class Cities(Resource):
             sort = args.get("sort")
             cities = cqry.read_sorted(sort)
             num_recs = len(cities)
+        except ValueError as e:
+            return {ERROR: str(e)}, 400
         except ConnectionError as e:
             return {ERROR: str(e)}
         return {
@@ -123,9 +120,8 @@ class Cities(Resource):
 
 # reusable model for city create/update
 city_model = api.model('CityModel', {
-    'name': {'type': 'string', 'required': True, 'description': 'City name'},
-    'state_code': {
-        'type': 'string', 'required': False, 'description': 'State code'},
+    'name': fields.String(required=True, description='City name'),
+    'state_code': fields.String(required=False, description='State code'),
 })
 
 
@@ -156,6 +152,7 @@ class States(Resource):
 
 @api.route(STATES_EPS)
 class StatesRoot(Resource):
+    @api.doc(description="Create a new state")
     @api.expect(state_model)
     def post(self):
         payload = api.payload
@@ -168,6 +165,7 @@ class StatesRoot(Resource):
 
 @api.route(f'{STATES_EPS}/<string:state_id>')
 class StateItem(Resource):
+    @api.doc(description="Get a state by id", params={'state_id': 'State id'})
     @api.doc(params={'state_id': 'State database id'})
     def get(self, state_id):
         try:
@@ -176,6 +174,7 @@ class StateItem(Resource):
             return {ERROR: str(e)}, 404
         return state
 
+    @api.doc(description="Update a state by id")
     @api.expect(state_model)
     def put(self, state_id):
         payload = api.payload
@@ -187,6 +186,7 @@ class StateItem(Resource):
             return {ERROR: 'No changes made or state not found'}, 404
         return {MESSAGE: 'Updated'}, 200
 
+    @api.doc(description="Delete a state by id")
     def delete(self, state_id):
         try:
             ok = sqry.delete_by_id(state_id)
@@ -260,10 +260,12 @@ class Health(Resource):
 
 @api.route(COUNTRIES_EP)
 class CountriesRoot(Resource):
+    @api.doc(description="List all countries (in-memory cache)")
     def get(self):
         countries = cntry.read()
         return {COUNTRY_RESP: countries, NUM_RECS: len(countries)}
 
+    @api.doc(description="Create a new country in cache")
     @api.expect(country_create_model)
     def post(self):
         payload = api.payload
@@ -276,6 +278,7 @@ class CountriesRoot(Resource):
 
 @api.route(f'{COUNTRIES_EP}/read')
 class CountriesRead(Resource):
+    @api.doc(description="List countries (compat endpoint)")
     def get(self):
         countries = cntry.read()
         return {COUNTRY_RESP: countries, NUM_RECS: len(countries)}
@@ -283,19 +286,24 @@ class CountriesRead(Resource):
 
 @api.route(f'{COUNTRIES_EP}/<string:country_id>')
 class CountryItem(Resource):
-    @api.doc(params={'country_id': 'Country id'})
+    @api.doc(
+        description="Get a country by id",
+        params={'country_id': 'Country id'}
+    )
     def get(self, country_id):
         try:
             return cntry.get_country_by_id(country_id)
         except ValueError as e:
             return {ERROR: str(e)}, 404
 
+    @api.doc(description="Update a country by id (in cache)")
     def put(self, country_id):
         if country_id not in cntry.country_cache:
             return {ERROR: 'Country not found'}, 404
         cntry.country_cache[country_id].update(api.payload or {})
         return {MESSAGE: 'Updated'}, 200
 
+    @api.doc(description="Delete a country by id (in cache)")
     def delete(self, country_id):
         if country_id not in cntry.country_cache:
             return {ERROR: 'Country not found'}, 404
@@ -332,6 +340,7 @@ class Endpoints(Resource):
 
 @api.route('/counts')
 class Counts(Resource):
+    @api.doc(description="Record counts for cities, states, countries")
     def get(self):
         return {
             'cities': cqry.num_cities(),

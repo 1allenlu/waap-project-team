@@ -107,7 +107,7 @@ def read_sorted(sort=None):
     desc = sort.startswith("-")
     key = sort[1:] if desc else sort
     if key not in SORTABLE_FIELDS:
-        return items
+        raise ValueError(f'Invalid sort field: {key}')
 
     def keyfunc(rec):
         return (rec.get(key) or "").upper()
