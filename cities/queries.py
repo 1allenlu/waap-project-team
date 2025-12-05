@@ -116,7 +116,6 @@ def read_sorted(sort=None):
 
 def read() -> dict:
     """Return all cities using in-memory cache when available"""
-    global city_cache
     if city_cache is None:
         _load_city_cache()
     return city_cache
