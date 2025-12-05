@@ -5,7 +5,7 @@ The endpoint called `endpoints` will return all available endpoints.
 # from http import HTTPStatus
 
 from flask import Flask  # , request
-from flask_restx import Resource, Api  # , fields  # Namespace
+from flask_restx import Resource, Api  # Namespace
 from flask_cors import CORS
 
 # import werkzeug.exceptions as wz
@@ -36,6 +36,13 @@ country_create_model = api.model('CountryCreate', {
     },
 })
 
+state_model = api.model('State', {
+    'name': {'type': 'string', 'required': True, 'description': 'State name'},
+    'code': {'type': 'string', 'required': True, 'description': 'State code'},
+    'country_code': {
+        'type': 'string', 'required': True, 'description': 'Country code'},
+})
+
 ERROR = 'Error'
 MESSAGE = 'Message'
 NUM_RECS = 'Number of Records'
@@ -55,6 +62,7 @@ STATE_RESP = 'States'
 
 COUNTRIES_EP = '/countries'
 COUNTRY_RESP = 'Countries'
+COUNT_RESP = 'counts'
 
 sort_parser = api.parser()
 sort_parser.add_argument(
@@ -146,6 +154,49 @@ class States(Resource):
         }
 
 
+@api.route(STATES_EPS)
+class StatesRoot(Resource):
+    @api.expect(state_model)
+    def post(self):
+        payload = api.payload
+        try:
+            new_id = sqry.create(payload)
+        except ValueError as e:
+            return {ERROR: str(e)}, 400
+        return {'id': str(new_id)}, 201
+
+
+@api.route(f'{STATES_EPS}/<string:state_id>')
+class StateItem(Resource):
+    @api.doc(params={'state_id': 'State database id'})
+    def get(self, state_id):
+        try:
+            state = sqry.get_by_id(state_id)
+        except ValueError as e:
+            return {ERROR: str(e)}, 404
+        return state
+
+    @api.expect(state_model)
+    def put(self, state_id):
+        payload = api.payload
+        try:
+            ok = sqry.update_by_id(state_id, payload)
+        except ValueError as e:
+            return {ERROR: str(e)}, 400
+        if not ok:
+            return {ERROR: 'No changes made or state not found'}, 404
+        return {MESSAGE: 'Updated'}, 200
+
+    def delete(self, state_id):
+        try:
+            ok = sqry.delete_by_id(state_id)
+        except ValueError as e:
+            return {ERROR: str(e)}, 400
+        if not ok:
+            return {ERROR: 'State not found'}, 404
+        return {MESSAGE: 'Deleted'}, 200
+
+
 @api.route(CITIES_EPS)
 class CitiesRoot(Resource):
     """POST-only endpoint for creating cities at /cities
@@ -207,43 +258,49 @@ class Health(Resource):
         return {'status': 'ok'}
 
 
-@api.route(f'{COUNTRIES_EP}/read')
-class Countries(Resource):
-    @api.doc(
-        description="Return all countries from the in-memory country cache."
-    )
-    @api.response(200, "Countries returned successfully")
-    @api.response(500, "Backend error while reading countries")
+@api.route(COUNTRIES_EP)
+class CountriesRoot(Resource):
     def get(self):
-        """
-        Return all countries
-        """
-        try:
-            countries = cntry.read()
-            num_recs = len(countries)
-        except Exception as e:
-            return {ERROR: str(e)}, 500
-        return {
-            COUNTRY_RESP: countries,
-            NUM_RECS: num_recs,
-        }
+        countries = cntry.read()
+        return {COUNTRY_RESP: countries, NUM_RECS: len(countries)}
 
     @api.expect(country_create_model)
     def post(self):
-        """Add a new country to the in-memory cache."""
         payload = api.payload
         try:
-            country_id = payload.get('id')
-            if not country_id:
-                raise ValueError("id is required")
-            # add to the in-memory country cache
-            cntry.country_cache[country_id] = {
-                cntry.NAME: payload.get('name'),
-                cntry.CAPITAL: payload.get('capital'),
-            }
-        except Exception as e:
+            new_id = cntry.create(payload)
+        except ValueError as e:
             return {ERROR: str(e)}, 400
-        return {'Message': f'Country {country_id} added successfully'}, 201
+        return {'id': str(new_id)}, 201
+
+
+@api.route(f'{COUNTRIES_EP}/read')
+class CountriesRead(Resource):
+    def get(self):
+        countries = cntry.read()
+        return {COUNTRY_RESP: countries, NUM_RECS: len(countries)}
+
+
+@api.route(f'{COUNTRIES_EP}/<string:country_id>')
+class CountryItem(Resource):
+    @api.doc(params={'country_id': 'Country id'})
+    def get(self, country_id):
+        try:
+            return cntry.get_country_by_id(country_id)
+        except ValueError as e:
+            return {ERROR: str(e)}, 404
+
+    def put(self, country_id):
+        if country_id not in cntry.country_cache:
+            return {ERROR: 'Country not found'}, 404
+        cntry.country_cache[country_id].update(api.payload or {})
+        return {MESSAGE: 'Updated'}, 200
+
+    def delete(self, country_id):
+        if country_id not in cntry.country_cache:
+            return {ERROR: 'Country not found'}, 404
+        del cntry.country_cache[country_id]
+        return {MESSAGE: 'Deleted'}, 200
 
 
 @api.route(HELLO_EP)
@@ -271,3 +328,13 @@ class Endpoints(Resource):
         """
         endpoints = sorted(rule.rule for rule in api.app.url_map.iter_rules())
         return {"Available endpoints": endpoints}
+
+
+@api.route('/counts')
+class Counts(Resource):
+    def get(self):
+        return {
+            'cities': cqry.num_cities(),
+            'states': sqry.count(),
+            'countries': len(cntry.read()),
+        }

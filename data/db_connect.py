@@ -289,8 +289,6 @@ def ensure_connection_health(fn):
     """Verify connection health before operation and log status."""
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        global client
-
         if client is None:
             logger.warning(
                 f'{fn.__name__} called with no client, connecting...')
@@ -310,7 +308,6 @@ def ensure_connection_health(fn):
 @contextmanager
 def db_session(db=GEO_DB):
     """Context manager for database sessions with automatic cleanup."""
-    global client
     session = None
     try:
         if client is None:
@@ -354,7 +351,6 @@ def needs_db(fn):
         """Ensure a live MongoDB client exists before calling fn.
         If the client is not set, or if the server is unreachable
         (server_info raises), try to (re)connect. """
-        global client
         try:
             if client is None:
                 connect_db()

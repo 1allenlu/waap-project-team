@@ -2,25 +2,30 @@ from copy import deepcopy
 
 # from unittest.mock import patch
 import pytest
+import uuid
 
 import states.queries as qry
 
 
 def get_temp_rec():
-    return deepcopy(qry.SAMPLE_STATE)
+    rec = deepcopy(qry.SAMPLE_STATE)
+    # use unique code per test to avoid duplicate-key failures
+    rec[qry.STATE_CODE] = f"TS-{uuid.uuid4().hex[:6]}"
+    rec[qry.NAME] = f"TestState-{rec[qry.STATE_CODE]}"
+    return rec
 
 
 @pytest.fixture(scope='function')
 def temp_state_no_del():
     temp_rec = get_temp_rec()
-    qry.create(get_temp_rec())
+    qry.create(temp_rec)
     return temp_rec
 
 
 @pytest.fixture(scope='function')
 def temp_state():
     temp_rec = get_temp_rec()
-    new_rec_id = qry.create(get_temp_rec())
+    new_rec_id = qry.create(temp_rec)
     yield new_rec_id
     try:
         qry.delete(temp_rec[qry.NAME], temp_rec[qry.STATE_CODE])
@@ -64,7 +69,10 @@ def test_delete_not_there():
         qry.delete('some state name that is not there', 'not a state')
 
 
-def test_read(temp_state):
+def test_read(temp_state_no_del):
     states = qry.read()
     assert isinstance(states, list)
-    assert get_temp_rec() in states
+    assert any(
+        s.get(qry.STATE_CODE) == temp_state_no_del[qry.STATE_CODE]
+        for s in states
+    )

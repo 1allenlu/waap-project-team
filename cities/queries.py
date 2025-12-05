@@ -11,6 +11,7 @@ ID = 'id'
 NAME = 'name'
 STATE_CODE = 'state_code'
 
+# SAMPLE_CITY kept only for reference
 SAMPLE_CITY = {
     NAME: 'New York',
     STATE_CODE: 'NY',
