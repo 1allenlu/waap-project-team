@@ -12,17 +12,20 @@ from examples.form_filler import FLD_NM  # for tests
 USERNAME = 'username'
 PASSWORD = 'password'
 
+# High-level explanation of what this list represents.
+#    This is the full field definition for the login form, in the structure
+#    expected by form_filler and by Swagger documentation.
 LOGIN_FORM_FLDS = [
     {
         FLD_NM: 'Instructions',
         ff.QSTN: 'Enter your username and password.',
-        ff.INSTRUCTIONS: True,
+        ff.INSTRUCTIONS: True, # Marks this entry as an instructional (non-input) field.
     },
     {
         FLD_NM: USERNAME,
-        ff.QSTN: 'User name:',
+        ff.QSTN: 'User name:', # Prompt shown to the user.
         ff.PARAM_TYPE: ff.QUERY_STR,
-        ff.OPT: False,
+        ff.OPT: False,       # This field is required.
     },
     {
         FLD_NM: PASSWORD,
