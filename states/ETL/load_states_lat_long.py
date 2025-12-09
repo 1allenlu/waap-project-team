@@ -10,13 +10,16 @@ CURR_COUNTRY = 'USA'
 
 
 def extract(flnm: str) -> list:
+    """Read the TSV file and return list of rows."""    
     state_list = []
     try:
+        # Open file as tab-separated values 
         with open(flnm) as f:
             reader = csv.reader(f, delimiter='\t')
             for row in reader:
                 state_list.append(row)
     except Exception as e:
+        # Exit early if file can't be read 
         print(f'Problem reading csv file: {str(e)}')
         exit(1)
     return state_list
