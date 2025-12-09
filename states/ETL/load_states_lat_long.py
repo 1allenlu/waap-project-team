@@ -10,23 +10,29 @@ CURR_COUNTRY = 'USA'
 
 
 def extract(flnm: str) -> list:
+    """Read the TSV file and return list of rows."""
     state_list = []
     try:
+        # Open file as tab-separated values  
         with open(flnm) as f:
             reader = csv.reader(f, delimiter='\t')
             for row in reader:
                 state_list.append(row)
     except Exception as e:
+        # Exit early if file can't be read
         print(f'Problem reading csv file: {str(e)}')
         exit(1)
     return state_list
 
 
 def transform(state_list: list) -> list:
+    """Convert rows into dicts, attach country code.""" 
     rev_list = []
+    # First row contains column names
     col_names = state_list.pop(0)
     for state in state_list:
         state_dict = {}
+        # Map each column name to its value 
         for i, fld in enumerate(col_names):
             state_dict[fld] = state[i]
         state_dict[COUNTRY_CODE] = CURR_COUNTRY
