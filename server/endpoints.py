@@ -166,9 +166,9 @@ class StatesRoot(Resource):
 @api.route(f'{STATES_EPS}/<string:state_id>')
 class StateItem(Resource):
     @api.doc(
-        description="Get a state by id", params={'state_id': 'State id',
-        params={'state_id': 'State database id'}
-    )
+        description="Get a state by id",
+        params={'state_id': 'State id'}
+        )
     def get(self, state_id):
         try:
             state = sqry.get_by_id(state_id)
