@@ -19,11 +19,12 @@ LOGIN_FORM_FLDS = [
     {
         FLD_NM: 'Instructions',
         ff.QSTN: 'Enter your username and password.',
-        ff.INSTRUCTIONS: True, # Marks this entry as an instructional (non-input) field.
+        ff.INSTRUCTIONS: True,
+        # Marks this entry as an instructional (non-input) field.
     },
     {
         FLD_NM: USERNAME,
-        ff.QSTN: 'User name:', # Prompt shown to the user.
+        ff.QSTN: 'User name:',  # Prompt shown to the user.
         ff.PARAM_TYPE: ff.QUERY_STR,
         ff.OPT: False,       # This field is required.
     },

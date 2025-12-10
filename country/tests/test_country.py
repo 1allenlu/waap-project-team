@@ -34,7 +34,6 @@ def test_create_country_success():
         country.CAPITAL: "Paris"
     }
     new_id = country.create(new_country)
-    
     assert new_id is not None
     assert new_id in country.country_cache
     assert country.country_cache[new_id][country.NAME] == "France"
@@ -73,7 +72,6 @@ def test_create_then_retrieve():
         country.CAPITAL: "Tokyo"
     }
     new_id = country.create(new_country)
-    
     retrieved = country.get_country_by_id(new_id)
     assert retrieved[country.NAME] == "Japan"
     assert retrieved[country.CAPITAL] == "Tokyo"
@@ -82,10 +80,8 @@ def test_create_then_retrieve():
 def test_create_multiple_countries():
     """Test creating multiple countries generates unique IDs."""
     initial_count = len(country.country_cache)
-    
     id1 = country.create({country.NAME: "Germany", country.CAPITAL: "Berlin"})
     id2 = country.create({country.NAME: "Spain", country.CAPITAL: "Madrid"})
-    
     assert id1 != id2
     assert len(country.country_cache) == initial_count + 2
     assert country.country_cache[id1][country.NAME] == "Germany"

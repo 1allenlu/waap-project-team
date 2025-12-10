@@ -56,7 +56,7 @@ STATE_RESP = 'States'
 
 COUNTRIES_EP = '/countries'
 COUNTRY_RESP = 'Countries'
-COUNT_RESP = 'counts'
+# COUNT_RESP = 'counts' Not used
 
 sort_parser = api.parser()
 sort_parser.add_argument(
@@ -335,7 +335,7 @@ class Endpoints(Resource):
         The `get()` method will return a sorted list of available endpoints.
         """
         endpoints = sorted(rule.rule for rule in api.app.url_map.iter_rules())
-        return {"Available endpoints": endpoints}
+        return {ENDPOINT_RESP: endpoints}
 
 
 @api.route('/counts')
