@@ -165,8 +165,10 @@ class StatesRoot(Resource):
 
 @api.route(f'{STATES_EPS}/<string:state_id>')
 class StateItem(Resource):
-    @api.doc(description="Get a state by id", params={'state_id': 'State id'})
-    @api.doc(params={'state_id': 'State database id'})
+    @api.doc(
+        description="Get a state by id", params={'state_id': 'State id',
+        params={'state_id': 'State database id'}
+    )
     def get(self, state_id):
         try:
             state = sqry.get_by_id(state_id)
@@ -248,7 +250,9 @@ class CityItem(Resource):
 
 @api.route('/health')
 class Health(Resource):
+    """Health check endpoint for app and database."""
     def get(self):
+        """Return 'ok' if the app and DB are reachable"""
         try:
             # lightweight DB ping
             import data.db_connect as dbc
@@ -340,6 +344,7 @@ class Endpoints(Resource):
 
 @api.route('/counts')
 class Counts(Resource):
+    """Return record counts for each top-level collections."""
     @api.doc(description="Record counts for cities, states, countries")
     def get(self):
         return {
