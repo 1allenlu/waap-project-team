@@ -76,3 +76,83 @@ def test_read(temp_state_no_del):
         s.get(qry.STATE_CODE) == temp_state_no_del[qry.STATE_CODE]
         for s in states
     )
+
+
+def test_count():
+    count = qry.count()
+    assert isinstance(count, int)
+    assert count >= 0
+
+
+def test_is_valid_id():
+    # Valid IDs
+    assert qry.is_valid_id('507f1f77bcf86cd799439011')
+    assert qry.is_valid_id('a')
+    # Invalid IDs
+    assert not qry.is_valid_id('')
+    assert not qry.is_valid_id(123)
+    assert not qry.is_valid_id(None)
+
+
+def test_get_by_id(temp_state):
+    state = qry.get_by_id(temp_state)
+    assert state is not None
+    assert qry.NAME in state
+
+
+def test_get_by_id_invalid():
+    with pytest.raises(ValueError, match='Invalid id'):
+        qry.get_by_id('')
+
+
+def test_get_by_id_not_found():
+    with pytest.raises(ValueError, match='State not found'):
+        qry.get_by_id('507f1f77bcf86cd799439011')
+
+
+def test_update_by_id(temp_state):
+    updated = qry.update_by_id(temp_state, {qry.NAME: 'Updated State'})
+    assert isinstance(updated, bool)
+
+
+def test_update_by_id_invalid_id():
+    with pytest.raises(ValueError, match='Invalid id'):
+        qry.update_by_id('', {qry.NAME: 'Updated'})
+
+
+def test_update_by_id_invalid_fields():
+    with pytest.raises(ValueError, match='update_fields must be a dict'):
+        qry.update_by_id('507f1f77bcf86cd799439011', 'not a dict')
+
+
+def test_delete_by_id(temp_state):
+    result = qry.delete_by_id(temp_state)
+    assert result is True
+
+
+def test_delete_by_id_invalid():
+    with pytest.raises(ValueError, match='Invalid id'):
+        qry.delete_by_id('')
+
+
+def test_delete_by_id_not_found():
+    result = qry.delete_by_id('507f1f77bcf86cd799439011')
+    assert result is False
+
+
+def test_create_duplicate_key():
+    temp_rec = get_temp_rec()
+    qry.create(temp_rec)
+    # Try to create the same state code + country code again
+    with pytest.raises(ValueError, match='Duplicate key'):
+        qry.create(temp_rec)
+
+
+def test_create_missing_state_code():
+    with pytest.raises(ValueError):
+        qry.create({qry.NAME: 'Test', qry.COUNTRY_CODE: 'USA'})
+
+
+def test_create_missing_country_code():
+    with pytest.raises(ValueError):
+        qry.create({qry.NAME: 'Test', qry.STATE_CODE: 'TS'})

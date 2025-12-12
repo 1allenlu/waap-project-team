@@ -73,3 +73,74 @@ def test_read(temp_city):
     cities = qry.read()
     assert isinstance(cities, list)
     assert get_temp_rec() in cities
+
+
+def test_is_valid_id():
+    # Valid IDs
+    assert qry.is_valid_id('507f1f77bcf86cd799439011')
+    assert qry.is_valid_id('a')
+    # Invalid IDs
+    assert not qry.is_valid_id('')
+    assert not qry.is_valid_id(123)
+    assert not qry.is_valid_id(None)
+
+
+def test_get_by_id(temp_city):
+    city = qry.get_by_id(temp_city)
+    assert city is not None
+    assert qry.NAME in city
+
+
+def test_get_by_id_invalid():
+    with pytest.raises(ValueError, match='Invalid id'):
+        qry.get_by_id('')
+
+
+def test_get_by_id_not_found():
+    with pytest.raises(ValueError, match='City not found'):
+        qry.get_by_id('507f1f77bcf86cd799439011')
+
+
+def test_update_by_id(temp_city):
+    updated = qry.update_by_id(temp_city, {qry.NAME: 'Updated City'})
+    assert isinstance(updated, bool)
+
+
+def test_update_by_id_invalid_id():
+    with pytest.raises(ValueError, match='Invalid id'):
+        qry.update_by_id('', {qry.NAME: 'Updated'})
+
+
+def test_update_by_id_invalid_fields():
+    with pytest.raises(ValueError, match='update_fields must be a dict'):
+        qry.update_by_id('507f1f77bcf86cd799439011', 'not a dict')
+
+
+def test_delete_by_id(temp_city):
+    result = qry.delete_by_id(temp_city)
+    assert result is True
+
+
+def test_delete_by_id_invalid():
+    with pytest.raises(ValueError, match='Invalid id'):
+        qry.delete_by_id('')
+
+
+def test_delete_by_id_not_found():
+    result = qry.delete_by_id('507f1f77bcf86cd799439011')
+    assert result is False
+
+
+def test_read_sorted_ascending():
+    cities = qry.read_sorted(sort=qry.NAME)
+    assert isinstance(cities, list)
+
+
+def test_read_sorted_descending():
+    cities = qry.read_sorted(sort=f'-{qry.NAME}')
+    assert isinstance(cities, list)
+
+
+def test_read_sorted_invalid_field():
+    with pytest.raises(ValueError, match='Invalid sort field'):
+        qry.read_sorted(sort='invalid_field')
