@@ -3,6 +3,7 @@
 This file deals with our city-level data.
 """
 import data.db_connect as dbc
+from bson import ObjectId
 MIN_ID_LEN = 1
 
 CITY_COLLECTION = 'cities'
@@ -61,7 +62,7 @@ def get_by_id(city_id: str) -> dict:
     """Return a single city by its database id (string)."""
     if not is_valid_id(city_id):
         raise ValueError('Invalid id')
-    rec = dbc.read_one(CITY_COLLECTION, {dbc.MONGO_ID: city_id})
+    rec = dbc.read_one(CITY_COLLECTION, {dbc.MONGO_ID: ObjectId(city_id)})
     if rec is None:
         raise ValueError('City not found')
     return rec
@@ -73,7 +74,7 @@ def update_by_id(city_id: str, update_fields: dict) -> bool:
         raise ValueError('Invalid id')
     if not isinstance(update_fields, dict):
         raise ValueError('update_fields must be a dict')
-    res = dbc.update(CITY_COLLECTION, {dbc.MONGO_ID: city_id}, update_fields)
+    res = dbc.update(CITY_COLLECTION, {dbc.MONGO_ID: ObjectId(city_id)}, update_fields)
     # pymongo UpdateResult has modified_count attribute
     try:
         return getattr(res, 'modified_count', 0) > 0
@@ -85,7 +86,7 @@ def delete_by_id(city_id: str) -> bool:
     """Delete a city by id; returns True if deleted_count > 0"""
     if not is_valid_id(city_id):
         raise ValueError('Invalid id')
-    deleted = dbc.delete(CITY_COLLECTION, {dbc.MONGO_ID: city_id})
+    deleted = dbc.delete(CITY_COLLECTION, {dbc.MONGO_ID: ObjectId(city_id)})
     if deleted > 0:
         _load_city_cache()   # refresh cache
     return deleted > 0
