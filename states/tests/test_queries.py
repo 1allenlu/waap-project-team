@@ -156,4 +156,3 @@ def test_create_missing_state_code():
 def test_create_missing_country_code():
     with pytest.raises(ValueError):
         qry.create({qry.NAME: 'Test', qry.STATE_CODE: 'TS'})
-

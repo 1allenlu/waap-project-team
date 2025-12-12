@@ -144,4 +144,3 @@ def test_read_sorted_descending():
 def test_read_sorted_invalid_field():
     with pytest.raises(ValueError, match='Invalid sort field'):
         qry.read_sorted(sort='invalid_field')
-

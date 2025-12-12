@@ -73,7 +73,7 @@ def num_states() -> int:
 
 @needs_cache
 def create(flds: dict, reload=True) -> str:
-    """Creates a new state in DB. Validates fields and checks for duplicates."""
+    """Creates a new state. Validates fields and checks for duplicates."""
     if not isinstance(flds, dict):
         raise ValueError(f'Bad type for {type(flds)=}')
     code = flds.get(STATE_CODE)
