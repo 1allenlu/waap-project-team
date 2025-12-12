@@ -74,7 +74,8 @@ def update_by_id(city_id: str, update_fields: dict) -> bool:
         raise ValueError('Invalid id')
     if not isinstance(update_fields, dict):
         raise ValueError('update_fields must be a dict')
-    res = dbc.update(CITY_COLLECTION, {dbc.MONGO_ID: ObjectId(city_id)}, update_fields)
+    res = dbc.update(
+        CITY_COLLECTION, {dbc.MONGO_ID: ObjectId(city_id)}, update_fields)
     # pymongo UpdateResult has modified_count attribute
     try:
         return getattr(res, 'modified_count', 0) > 0
