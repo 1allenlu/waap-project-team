@@ -5,6 +5,7 @@ This file deals with our state-level data.
 from functools import wraps
 
 import data.db_connect as dbc
+from bson import ObjectId
 
 MIN_ID_LEN = 1
 
@@ -108,7 +109,7 @@ def get_by_id(state_id: str) -> dict:
     # Return a single state by its database id (string).
     if not is_valid_id(state_id):
         raise ValueError('Invalid id')
-    rec = dbc.read_one(STATE_COLLECTION, {dbc.MONGO_ID: state_id})
+    rec = dbc.read_one(STATE_COLLECTION, {dbc.MONGO_ID: ObjectId(state_id)})
     if rec is None:
         raise ValueError('State not found')
     return rec
@@ -121,7 +122,8 @@ def update_by_id(state_id: str, update_fields: dict) -> bool:
         raise ValueError('Invalid id')
     if not isinstance(update_fields, dict):
         raise ValueError('update_fields must be a dict')
-    res = dbc.update(STATE_COLLECTION, {dbc.MONGO_ID: state_id}, update_fields)
+    res = dbc.update(
+        STATE_COLLECTION, {dbc.MONGO_ID: ObjectId(state_id)}, update_fields)
     load_cache()
     return getattr(res, 'modified_count', 0) > 0
 
@@ -131,7 +133,7 @@ def delete_by_id(state_id: str) -> bool:
     # Delete a state by id; returns True if deleted_count > 0.
     if not is_valid_id(state_id):
         raise ValueError('Invalid id')
-    deleted = dbc.delete(STATE_COLLECTION, {dbc.MONGO_ID: state_id})
+    deleted = dbc.delete(STATE_COLLECTION, {dbc.MONGO_ID: ObjectId(state_id)})
     load_cache()
     return deleted > 0
 
