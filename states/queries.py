@@ -33,7 +33,7 @@ cache = None
 
 
 def needs_cache(fn):
-    # Ensure cache is loaded before calling the function.
+    """Decorator: ensures cache is loaded before function runs."""
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if cache is None:
@@ -43,7 +43,7 @@ def needs_cache(fn):
 
 
 def load_cache():
-    # Load states from DB into in-memory cache.
+    """Loads all states from DB into memory, keyed by (code, country)."""
     global cache
     cache = {}
     states = dbc.read(STATE_COLLECTION)
@@ -57,6 +57,7 @@ def load_cache():
 
 @needs_cache
 def count() -> int:
+    """Returns total number of cached states."""
     if cache is None:
         load_cache()
     return len(cache)
@@ -64,6 +65,7 @@ def count() -> int:
 
 @needs_cache
 def num_states() -> int:
+    """Alias for count(); returns total cached states."""
     if cache is None:
         load_cache()
     return len(cache)
@@ -71,6 +73,7 @@ def num_states() -> int:
 
 @needs_cache
 def create(flds: dict, reload=True) -> str:
+    """Creates a new state in DB. Validates fields and checks for duplicates."""
     if not isinstance(flds, dict):
         raise ValueError(f'Bad type for {type(flds)=}')
     code = flds.get(STATE_CODE)
@@ -91,12 +94,12 @@ def create(flds: dict, reload=True) -> str:
 
 @needs_cache
 def read() -> list:
-    """Return list of states from cache."""
+    """Returns all states as a list from cache."""
     return list(cache.values())
 
 
 def is_valid_id(_id: str) -> bool:
-    # Accept only non-empty strings; minimal validation for ObjectId strings.
+    """Checks if _id is a non-empty string."""
     if not isinstance(_id, str):
         return False
     if len(_id) < MIN_ID_LEN:
@@ -106,7 +109,7 @@ def is_valid_id(_id: str) -> bool:
 
 @needs_cache
 def get_by_id(state_id: str) -> dict:
-    # Return a single state by its database id (string).
+    """Fetches a single state by its MongoDB ObjectId string."""
     if not is_valid_id(state_id):
         raise ValueError('Invalid id')
     rec = dbc.read_one(STATE_COLLECTION, {dbc.MONGO_ID: ObjectId(state_id)})
@@ -117,7 +120,7 @@ def get_by_id(state_id: str) -> dict:
 
 @needs_cache
 def update_by_id(state_id: str, update_fields: dict) -> bool:
-    # Update a state by id; returns True if modified_count > 0.
+    """Updates a state by id. Returns True if a document was modified."""
     if not is_valid_id(state_id):
         raise ValueError('Invalid id')
     if not isinstance(update_fields, dict):
@@ -130,7 +133,7 @@ def update_by_id(state_id: str, update_fields: dict) -> bool:
 
 @needs_cache
 def delete_by_id(state_id: str) -> bool:
-    # Delete a state by id; returns True if deleted_count > 0.
+    """Deletes a state by id. Returns True if a document was deleted."""
     if not is_valid_id(state_id):
         raise ValueError('Invalid id')
     deleted = dbc.delete(STATE_COLLECTION, {dbc.MONGO_ID: ObjectId(state_id)})
@@ -139,7 +142,7 @@ def delete_by_id(state_id: str) -> bool:
 
 
 def delete(name: str, state_code: str) -> bool:
-    # Delete by name and code (legacy use).
+    """Deletes a state by name + code (legacy). Raises if not found."""
     ret = dbc.delete(STATE_COLLECTION, {NAME: name, STATE_CODE: state_code})
     if ret < 1:
         raise ValueError(f'State not found: {state_code}')
