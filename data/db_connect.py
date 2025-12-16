@@ -381,7 +381,7 @@ def connect_db():
 
             if os.environ.get('CLOUD_MONGO', LOCAL) == CLOUD:
                 username = os.environ.get('MONGO_USER_NM', 'ss15580_db_user')
-                password = os.environ.get('MONGO_PASSWD')
+                password = os.environ.get('MONGO_PASSWORD')
                 host = os.environ.get(
                     'MONGO_HOST',
                     'geo2025-cluster.jooae0o.mongodb.net'
