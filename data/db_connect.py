@@ -30,7 +30,7 @@ MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 
 user_nm = os.getenv('MONGO_USER_NM', 'datamixmaster')
 cloud_svc = os.getenv('MONGO_HOST', 'datamixmaster.26rvk.mongodb.net')
-passwd = os.environ.get("MONGO_PASSWORD", '')
+password = os.environ.get("MONGO_PASSWORD", '')
 cloud_mdb = "mongodb+srv"
 db_params = "retryWrites=false&w=majority"
 
