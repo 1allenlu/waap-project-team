@@ -37,6 +37,8 @@ DB_DIR = data                # Database and data storage
 REQ_DIR = .                  # Requirements files location (project root)
 SEC_DIR = security           # Security utilities and validation
 SERVER_DIR = server          # Server and API implementation
+COUNTRY_DIR = country        # Country-level data and queries module
+EXAMPLES_DIR = examples      # Example code and utilities
 
 # ==============================================================================
 # Phony Targets
@@ -101,13 +103,16 @@ github: FORCE
 # Testing
 # ==============================================================================
 # all_tests: Run comprehensive test suite across all project modules
-# Executes tests in: cities, states, security, and server modules
+# Executes tests in all directories with code
 # Each module's tests are defined in their respective makefiles
 all_tests: FORCE
 	cd $(CITIES_DIR); make tests
 	cd $(STATES_DIR); make tests
 	cd $(SEC_DIR); make tests
 	cd $(SERVER_DIR); make tests
+	cd $(DB_DIR); make tests
+	cd $(COUNTRY_DIR); make tests
+	cd $(EXAMPLES_DIR); make tests
 
 # ==============================================================================
 # Development Environment Setup
